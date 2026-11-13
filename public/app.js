@@ -102,7 +102,7 @@ function onLeave(fn) { cleanup.push(fn); }
 function route() {
   cleanup.forEach(f => { try { f(); } catch (e) {} }); cleanup = []; S.onPlayerClose = null;
   closePlayer();
-  window.scrollTo(0, 0);
+  window.scrollTo(0, 0); app.scrollTop = 0;
   if (!S.acc) return renderLogin();
   const h = location.hash.replace(/^#\/?/, '').split('/');
   const [r, a] = h;
@@ -466,6 +466,7 @@ async function renderLive(catId) {
         <div class="tvtap" id="tvtap"></div>
         <div class="tvtop"><button class="ibtn" id="tvx">${I.back}</button><div class="tx"><div class="nn" dir="auto"></div><small class="ne" dir="auto"></small></div><span class="live">LIVE</span></div>
         <div class="tvpanel"><div class="tvcats" id="tvcats"></div><div class="tvchs" id="tvchs"></div></div>
+        <div class="tvguide" id="tvguide"></div>
       </div>
       <div class="nowbar"><span class="live">LIVE</span><div class="tx"><div class="nn" dir="auto"></div><small class="ne" dir="auto"></small></div>
         <button class="ibtn" id="fs">${I.full}</button><button class="ibtn" id="xc">${I.close}</button></div></div>
@@ -517,27 +518,29 @@ async function renderLive(catId) {
     const c = list[+r.dataset.i];
     if (current && current.stream_id == c.stream_id) { enterTV(); return; }
     playList = list; play(c);
+    if (isWide()) enterTV();
   };
   $('#ll').ondblclick = (e) => { if (e.target.closest('.row') && current) enterTV(); };
   async function drawGuide(c) {
-    const el = $('#epgl'); if (!el) return;
-    el.innerHTML = `<div class="g-h"><b dir="auto">${esc(c.name)}</b><span>Program guide</span></div><div class="loading"><div class="spin"></div></div>`;
+    const el = $('#epgl'), tg = $('#tvguide'); if (!el) return;
+    const put = (h) => { el.innerHTML = h; if (tg) tg.innerHTML = h; };
+    put(`<div class="g-h"><b dir="auto">${esc(c.name)}</b><span>Program guide</span></div><div class="loading"><div class="spin"></div></div>`);
     try {
       const l = await epgFor(c.stream_id, 8); if (current !== c) return;
       const n = Date.now() / 1000;
-      el.innerHTML = `<div class="g-h"><b dir="auto">${esc(c.name)}</b><span>Program guide</span></div>` + (l.length ? l.map(p => {
+      put(`<div class="g-h"><b dir="auto">${esc(c.name)}</b><span>Program guide</span></div>` + (l.length ? l.map(p => {
         const live = p.start <= n && (!p.end || p.end > n);
         const pct = live && p.end > p.start ? (n - p.start) / (p.end - p.start) * 100 : 0;
         return `<div class="g-r ${live ? 'now' : ''}"><span class="g-t">${hm(p.start)}${p.end ? ' – ' + hm(p.end) : ''}</span><span class="g-n" dir="auto">${esc(p.title)}</span>${live ? `<i class="epb on"><b style="width:${pct}%"></b></i>` : ''}</div>`; }).join('')
-        : '<div class="empty" style="padding:24px">No program guide for this channel</div>');
-    } catch (e) { el.innerHTML = ''; }
+        : '<div class="empty" style="padding:24px">No program guide for this channel</div>'));
+    } catch (e) { put(''); }
   }
   function play(c) {
     current = c; markOn();
     lbx.classList.remove('hidden');
     $$('.nn', lbx).forEach(x => x.textContent = c.name); $$('.ne', lbx).forEach(x => x.textContent = '');
     playLive(video, c, $('#vm'));
-    if (!lbx.classList.contains('tv') && !isWide()) window.scrollTo({ top: 0, behavior: 'smooth' });
+
     drawGuide(c);
     epgFor(c.stream_id, 2).then(l => { if (current !== c) return; const p = nowProg(l); if (p) $$('.ne', lbx).forEach(x => x.textContent = 'Now: ' + p.title); }).catch(() => {});
   }
@@ -560,7 +563,7 @@ async function renderLive(catId) {
     renderRows(el, tvList, 0, true);
     setTimeout(() => { const on = $('#tvchs .row.on'); if (on) { on.scrollIntoView({ block: 'center' }); on.focus({ preventScroll: true }); } }, 60);
   }
-  function showPanel() { lbx.classList.add('panel'); clearTimeout(hideT); hideT = setTimeout(() => lbx.classList.remove('panel'), 6000); }
+  function showPanel() { lbx.classList.add('panel'); clearTimeout(hideT); hideT = setTimeout(() => lbx.classList.remove('panel'), 5000); }
   $('#tvcats').onclick = (e) => { const b = e.target.closest('.cat'); if (!b) return; showPanel(); $$('#tvcats .cat').forEach(x => x.classList.toggle('on', x === b)); loadTvCat(b.dataset.c); };
   $('#tvchs').onclick = (e) => { const r = e.target.closest('.row'); if (!r) return; showPanel(); playList = tvList; play(tvList[+r.dataset.i]); };
   $('#tvchs').onscroll = $('#tvcats').onscroll = () => showPanel();
@@ -576,9 +579,10 @@ async function renderLive(catId) {
     const panel = lbx.classList.contains('panel');
     if (e.key === 'Escape' || e.key === 'Backspace') { e.preventDefault(); e.stopPropagation(); if (panel) lbx.classList.remove('panel'); else exitTV(); return; }
     if (!panel) {
-      if (e.key === 'ArrowUp') { e.preventDefault(); e.stopPropagation(); zap(-1); }
-      else if (e.key === 'ArrowDown') { e.preventDefault(); e.stopPropagation(); zap(1); }
-      else if (['Enter', ' ', 'ArrowLeft', 'ArrowRight'].includes(e.key)) { e.preventDefault(); e.stopPropagation(); showPanel(); const on = $('#tvchs .row.on') || $('#tvchs .row'); if (on) on.focus(); }
+      // any button brings the menus back (up/down still switch channel straight away)
+      if (e.key === 'ArrowUp') { e.preventDefault(); e.stopPropagation(); zap(-1); showPanel(); }
+      else if (e.key === 'ArrowDown') { e.preventDefault(); e.stopPropagation(); zap(1); showPanel(); }
+      else { e.preventDefault(); e.stopPropagation(); showPanel(); const on = $('#tvchs .row.on') || $('#tvchs .row'); if (on) on.focus({ preventScroll: true }); }
     } else showPanel();
   }
   document.addEventListener('keydown', onKey, true);
@@ -634,8 +638,14 @@ async function playLive(v, c, msg) {
   }
   playHls(v, c, msg, token, failMsg);
 }
+function diagLine(code) {
+  const v = document.createElement('video');
+  return [code, 'iOS ' + ((navigator.userAgent.match(/OS (\d+)_(\d+)/) || []).slice(1).join('.') || '-'),
+    'MMS ' + (window.ManagedMediaSource ? 'yes' : 'no'), 'MSE ' + (window.MediaSource ? 'yes' : 'no'),
+    'HLS ' + (v.canPlayType('application/vnd.apple.mpegurl') || 'no'), standalone ? 'app' : 'browser'].filter(Boolean).join(' · ');
+}
 async function explainFail(show, code) {
-  show('This channel is not available right now.<br>Try another channel.' + (code ? `<small class="ecode">${esc(code)}</small>` : ''));
+  show('This channel is not available right now.<br>Try another channel.' + `<small class="ecode">${esc(diagLine(code))}</small>`);
   try {
     const j = await api({}); const u = (j && j.user_info) || {};
     if (+u.max_connections && +u.active_cons >= +u.max_connections)
