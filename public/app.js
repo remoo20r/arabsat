@@ -361,13 +361,14 @@ function renderHome() {
       ${card('series', 'Series', 'Series', '#/series', HI.series)}
     </div>
     <div class="hnew"><button class="tile hcard hc-new" data-go="#/new"><span class="hc-tab"></span>
-      <span class="hn-badge">NEW</span><span class="hn-t">New Releases</span><span class="hn-s">Latest movies &amp; series</span>
-      <span class="hn-i"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2l2.4 6.3L21 9l-5 4.6L17.5 21 12 17.3 6.5 21 8 13.6 3 9l6.6-.7z"/></svg></span></button></div>
+      <span class="hn-badge">NEW</span></button></div>
     ${cw.length ? `<div class="section-t">Continue Watching</div><div class="hrow">${cw.map(c => `
       <button class="cw" data-cw="${esc(c.id)}"><div class="im" style="background-image:url('${esc(img(c.img))}')"><div class="prog" style="width:${Math.min(100, c.t / c.d * 100)}%"></div></div>
       <div class="n" dir="auto">${esc(c.title)}</div></button>`).join('')}</div>` : ''}
     <div class="hbot">
-      <div class="hb-l"><div class="hexp">${exp ? `Active until <b>${exp.toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' })}</b>` : (ui.username ? '<b>Unlimited</b>' : '')}<a href="tel:${SUPPORT.tel}">${I.phone}${SUPPORT.show}</a></div></div>
+      <div class="hb-l"><div class="hexp">${exp ? `Active until <b>${exp.toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' })}</b>` : (ui.username ? '<b>Unlimited</b>' : '')}<div class="hcontact"><span class="hc-num">${SUPPORT.show}</span>
+        <a class="hc-btn hc-call" href="tel:${SUPPORT.tel}" aria-label="Call">${I.phone}</a>
+        <a class="hc-btn hc-wa" href="https://wa.me/${SUPPORT.wa}" target="_blank" rel="noopener" aria-label="WhatsApp">${I.wa}</a></div></div></div>
       <div class="hb-c"><div class="t" id="ck"></div><div class="d" id="cd"></div></div>
       <div class="hb-r" id="hwx"></div>
     </div></div>`;

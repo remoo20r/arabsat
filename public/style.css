@@ -666,3 +666,44 @@ body.light .livebox.tv .row,body.light .livebox.tv .cat{color:#EDF1F6}
   .chgrid{display:block;flex:1 1 auto;min-height:0;overflow-y:auto;padding:4px 10px 30px;grid-template-columns:none}
   .chgrid .row{margin-bottom:4px}
 }
+
+/* ===== NEW strip: just the gold NEW, centered ===== */
+.tile.hcard.hc-new{justify-content:center;padding:0}
+.hc-new .hc-tab{left:50%;margin-left:-27px}
+.hc-new .hn-badge{font-size:22px;letter-spacing:6px;padding:9px 30px;border-radius:12px;box-shadow:0 6px 22px rgba(212,175,55,.45);animation:newglow 2.6s ease-in-out infinite}
+@keyframes newglow{0%,100%{box-shadow:0 6px 22px rgba(212,175,55,.4);transform:scale(1)}50%{box-shadow:0 6px 34px rgba(243,217,139,.75);transform:scale(1.05)}}
+.tile.hcard.hc-new:hover .hn-badge,.tile.hcard.hc-new:focus-visible .hn-badge{animation:none;transform:scale(1.12);box-shadow:0 0 0 3px rgba(243,217,139,.45),0 8px 30px rgba(212,175,55,.7)}
+@media (max-width:899px){.hc-new .hn-badge{font-size:18px;letter-spacing:5px;padding:7px 24px}}
+
+/* ===== phone number with animated Call + WhatsApp buttons ===== */
+.hcontact{display:flex;align-items:center;gap:10px;margin-top:2px}
+.hc-num{color:var(--goldL);font-weight:800;font-size:13.5px;letter-spacing:.3px}
+.hc-btn{position:relative;width:38px;height:38px;border-radius:50%;display:grid;place-items:center;color:#fff;text-decoration:none;flex:none}
+.hc-btn svg{width:19px;height:19px;position:relative;z-index:1}
+.hc-call{background:linear-gradient(135deg,#E0223A,#8E121F);box-shadow:0 4px 14px rgba(211,36,54,.5)}
+.hc-wa{background:linear-gradient(135deg,#2BD366,#128C4B);box-shadow:0 4px 14px rgba(37,211,102,.45)}
+.hc-btn::before,.hc-btn::after{content:"";position:absolute;inset:0;border-radius:50%;border:2px solid currentColor;opacity:0;animation:ring 2.4s ease-out infinite}
+.hc-call::before,.hc-call::after{color:#F04B5C}.hc-wa::before,.hc-wa::after{color:#2BD366}
+.hc-btn::after{animation-delay:1.2s}
+.hc-wa::before{animation-delay:.6s}.hc-wa::after{animation-delay:1.8s}
+@keyframes ring{0%{transform:scale(1);opacity:.8}100%{transform:scale(1.9);opacity:0}}
+.hc-call svg{animation:wiggle 2.4s ease-in-out infinite}
+.hc-wa svg{animation:bob 2.4s ease-in-out infinite .6s}
+@keyframes wiggle{0%,60%,100%{transform:rotate(0)}65%{transform:rotate(-18deg)}70%{transform:rotate(16deg)}75%{transform:rotate(-14deg)}80%{transform:rotate(10deg)}85%{transform:rotate(0)}}
+@keyframes bob{0%,60%,100%{transform:scale(1)}70%{transform:scale(1.22)}80%{transform:scale(.95)}90%{transform:scale(1.08)}}
+.hc-btn:hover,.hc-btn:focus-visible{transform:scale(1.15)}
+.hc-btn{transition:transform .2s}
+.hexp>a{display:none}
+.hexp .hc-btn{display:grid;place-items:center;gap:0;padding:0;color:#fff}
+.hexp .hc-btn svg{width:19px;height:19px}
+@media (max-width:899px){
+  .hcontact{gap:7px}
+  .hexp .hc-btn{width:30px;height:30px}
+  .hexp .hc-btn svg{width:15px;height:15px}
+  .hc-num{font-size:12px}
+}
+@media (max-width:899px){
+  .hbot{grid-template-columns:auto minmax(0,1fr);column-gap:10px}
+  .hb-r{min-width:0;overflow:hidden}
+  .hb-r *{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+}
