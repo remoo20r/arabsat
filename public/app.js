@@ -61,7 +61,7 @@ async function cached(key, params) {
   return p;
 }
 /* LG TV app: these channel groups are not offered on LG TVs at all (categories and channels whose names match) */
-const LG_BLOCK = /\b(osn|be\s?in|mbc|shahid|rotana|ssc|alkass|al\s?kass|ad\s?sports?|abu\s?dhabi\s?sports?|dubai\s?sports?|starz|tod|art\s?(aflam|hekayat|cinema|movies))\b|بي\s?ان|ام\s?بي\s?سي|روتانا|شاهد|اوربت|أوربت/i;
+const LG_BLOCK = /\b(osn|be\s?in|mbc|shahid|rotana|ssc|alkass|al\s?kass|ad\s?sports?|abu\s?dhabi\s?sports?|dubai\s?sports?|starz\w*|tod|orbit|art\s?(aflam|hekayat|cinema|movies)?|netflix|disney\w*|sky|nba|nfl|nhl|mlb|mls|ufc|wwe|fox|nbc|cbs|abc|espn|hbo|prime|dazn|eurosport|canal\+?|paramount|showtime|amc|discovery|nat\s?geo|national\s?geographic|nickelodeon|nick|cartoon|boomerang|cinemax|tnt|sports?|spor|esportes|deportes|thamanya|top\s+(series|classic|stories|moveis|movies)|power|majestic|magic|yes|ppv|vip)\b|بي\s?ان|ام\s?بي\s?سي|روتانا|شاهد|اوربت|أوربت|الثمانية|رياض|ماجيك/i;
 function isLGApp() { return !!store.get('tvid', null) || /Web0S|webOS/i.test(navigator.userAgent); }
 async function lgFilterLive(action, v) {
   if (!Array.isArray(v)) return v;
@@ -177,6 +177,7 @@ function route() {
   const h = location.hash.replace(/^#\/?/, '').split('/');
   const [r, a] = h;
   if (r === 'live') return renderLive(a);
+  if (isLGApp() && ['movies', 'series', 'movie', 'show', 'new'].includes(r)) { location.replace('#/'); return renderHome(); }   // LG TVs: live channels only
   if (r === 'movies') return renderGridSection('vod', a);
   if (r === 'series') return renderGridSection('series', a);
   if (r === 'movie') return renderMovie(a);
@@ -600,19 +601,20 @@ async function loadWeather() {
 function renderHome() {
   const ui = S.acc.info || {};
   const exp = ui.exp_date ? new Date(ui.exp_date * 1000) : null;
-  const cw = continueList();
+  const lgv = isLGApp();
+  const cw = lgv ? [] : continueList();
   const card = (key, title, sub, go, icon) => `<button class="tile hcard hc-${key}" data-go="${go}" data-nav="${key}" data-rb>
       <span class="hc-tab"></span><span class="hc-t">${title}</span><span class="hc-scene">${icon}</span></button>`;
-  app.innerHTML = `<div class="home home2 home3"><div class="hbg" id="hbg"></div>
+  app.innerHTML = `<div class="home home2 home3${lgv ? ' lgv' : ''}"><div class="hbg" id="hbg"></div>
     <div class="htop"><div class="hlogo"><img src="icon-192.png?v=3" alt=""><div><div class="w">ARABESK <b>TV</b></div><div class="ar">أرابيسك تي في</div></div></div>
       <div class="hact"><button class="ibtn" data-go="#/search" data-nav="srch" data-rb>${I.search}</button><button class="ibtn" id="rf" data-nav="rf" data-rb>${I.refresh}</button><button class="ibtn" id="st" data-nav="st" data-rb>${I.gear}</button></div></div>
     <div class="h3wrap"><div class="h3grid">
       ${card('live', 'Live TV', 'Channels', '#/live', SCN.live)}
-      ${card('movies', 'Movies', 'Movies', '#/movies', SCN.movies)}
-      ${card('series', 'Series', 'Series', '#/series', SCN.series)}
+      ${lgv ? '' : card('movies', 'Movies', 'Movies', '#/movies', SCN.movies)}
+      ${lgv ? '' : card('series', 'Series', 'Series', '#/series', SCN.series)}
       <div class="h3c h3wx" id="hwx" data-rb><div class="wxfx" id="wxfx"></div><div class="wxi">${WX.part}</div><div class="wxt"><b>--°</b><span class="wxs">Weather</span><span class="wxl">${HI.pin}<em>Locating…</em></span></div></div>
       <div class="h3c h3clock" data-rb><div class="t"><span id="ckhm"></span><span class="sec" id="cks"></span><span class="ap" id="ckap"></span></div><div class="dw" id="cw"></div><div class="d" id="cd"></div><div class="secbar"><i id="ckbar"></i></div></div>
-      <button class="h3c h3new" data-go="#/new" data-nav="new" data-rb><i class="spk s1">${SPARK}</i><i class="spk s2">${SPARK}</i><i class="spk s3">${SPARK}</i><span class="hn-badge">NEW</span><span class="hn-txt"><b>New Releases</b><span>Latest movies &amp; series</span></span><span class="hn-arr">&#8250;</span></button>
+      ${lgv ? '' : `<button class="h3c h3new" data-go="#/new" data-nav="new" data-rb><i class="spk s1">${SPARK}</i><i class="spk s2">${SPARK}</i><i class="spk s3">${SPARK}</i><span class="hn-badge">NEW</span><span class="hn-txt"><b>New Releases</b><span>Latest movies &amp; series</span></span><span class="hn-arr">&#8250;</span></button>`}
     </div>
     <div class="h3bot"><span class="h3b1"></span>
       <div class="h3info">
@@ -678,7 +680,7 @@ function renderHome() {
   homeRubber(app);
   loadWeather();
   // counts + a blurred movie poster behind everything
-  cached('all_v', { action: 'get_vod_streams' }).then(a => {
+  if (!lgv) cached('all_v', { action: 'get_vod_streams' }).then(a => {
     const withPic = a.filter(x => img(x.stream_icon)).slice(0, 60); const pick = withPic[Math.floor(Math.random() * withPic.length)];
     if (pick && $('#hbg')) { const im = new Image(); im.onload = () => { const b = $('#hbg'); if (b) { b.style.backgroundImage = `url('${img(pick.stream_icon)}')`; b.classList.add('on'); } }; im.src = img(pick.stream_icon); }
   }).catch(() => {});
@@ -1434,7 +1436,7 @@ function renderSearch() {
     const s = q.value.trim().toLowerCase(); const el = $('#sr');
     if (s.length < 2) { el.innerHTML = empty('Type at least 2 letters'); return; }
     const m = (x) => String(x.name || '').toLowerCase().includes(s);
-    const L = data.l.filter(m).slice(0, 40), V = data.v.filter(m).slice(0, 60), Sr = data.s.filter(m).slice(0, 60);
+    const L = data.l.filter(m).slice(0, 40), V = isLGApp() ? [] : data.v.filter(m).slice(0, 60), Sr = isLGApp() ? [] : data.s.filter(m).slice(0, 60);
     if (!L.length && !V.length && !Sr.length) { el.innerHTML = empty('No results'); return; }
     el.innerHTML = (L.length ? `<h4>Channels</h4><div class="list">${L.map((c, i) => `<div class="row" data-li="${i}"><div class="lg">${img(c.stream_icon) ? `<img loading="lazy" src="${esc(img(c.stream_icon))}">` : '<span class="ph">TV</span>'}</div><div class="nm"><div dir="auto">${esc(c.name)}</div></div></div>`).join('')}</div>` : '')
       + (V.length ? `<h4>Movies</h4><div class="grid">${V.map(i => posterCard(i, true)).join('')}</div>` : '')
@@ -1474,7 +1476,8 @@ function homeNav(dir) {
   const cur = document.activeElement && document.activeElement.closest && document.activeElement.closest('[data-nav]');
   if (!cur || !home.contains(cur)) { const f = home.querySelector('[data-nav="live"]'); if (f) f.focus({ preventScroll: true }); return true; }
   const to = (map[cur.dataset.nav] || {})[dir];
-  const el = to && home.querySelector(`[data-nav="${to}"]`);
+  let el = to && home.querySelector(`[data-nav="${to}"]`);
+  if (!el && to && home.classList.contains('lgv') && (dir === 'ArrowDown' || dir === 'ArrowUp') && cur.dataset.nav !== 'live') el = home.querySelector(dir === 'ArrowDown' ? '[data-nav="live"]' : '[data-nav="rf"]');
   if (el) el.focus({ preventScroll: true }); else rubber(cur, dir);
   return true;
 }

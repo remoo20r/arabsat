@@ -1240,3 +1240,6 @@ body.kbd #catq:focus{outline:none}
 .rvbox{margin-top:16px;display:grid;grid-template-columns:1fr auto;gap:8px;align-items:center}
 .rvbox .lbl{grid-column:1/-1}.rvbox .err{grid-column:1/-1;min-height:0}
 .rvbox .input{font-size:20px;letter-spacing:4px;text-align:center}
+
+/* LG TVs: live channels only, the Live TV card fills the top row */
+.home3.lgv .hc-live{grid-column:1/-1}
