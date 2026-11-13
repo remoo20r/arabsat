@@ -622,10 +622,10 @@ function renderHome() {
           <a class="hc-btn hc-wa" href="https://wa.me/${SUPPORT.wa}" target="_blank" rel="noopener" aria-label="WhatsApp">${I.wa}<em>WhatsApp</em></a></span></div>
       </div>
       <div class="h3cw2">${cw.length ? `        <button class="cwo" id="cwo" data-nav="cw" data-rb aria-label="Continue Watching"><span class="halo"></span><span class="ov">
-          ${cw.slice(0, 4).map((c, k) => `<span class="sl${k ? '' : ' on'}" data-cw="${esc(c.id)}"><span class="pic" style="background-image:url('${esc(img(c.img))}')"></span>
+          ${cw.slice(0, 8).map((c, k) => `<span class="sl${k ? '' : ' on'}" data-cw="${esc(c.id)}"><span class="pic" style="background-image:url('${esc(img(c.img))}')"></span>
             <span class="sh"></span><span class="pl">${I.play}</span><span class="tx"><b dir="auto">${esc(c.title)}</b><em>${Math.max(1, Math.round((c.d - c.t) / 60))} min left</em></span>
             <span class="bar"><i style="width:${Math.min(100, c.t / c.d * 100).toFixed(1)}%"></i></span></span>`).join('')}
-          </span>${cw.length > 1 ? `<span class="dots">${cw.slice(0, 4).map((_, k) => `<i class="${k ? '' : 'on'}"></i>`).join('')}</span>` : ''}</button>` : ''}</div>
+          </span>${cw.length > 1 ? `<span class="dots">${cw.slice(0, 8).map((_, k) => `<i class="${k ? '' : 'on'}"></i>`).join('')}</span>` : ''}</button>` : ''}</div>
     </div>
     </div></div>`;
   const tick = () => { const n = new Date(); const t = $('#ckhm'); if (!t) return;
@@ -643,7 +643,37 @@ function renderHome() {
   if (cwo) {
     const sl = $$('.sl', cwo), dt = $$('.dots i', cwo); let ci = 0;
     cwo.onclick = () => { const id = sl[ci].dataset.cw; resumeItem(cw.find(c => String(c.id) === id)); };
-    if (sl.length > 1) { const civ = setInterval(() => { sl[ci].classList.remove('on'); if (dt[ci]) dt[ci].classList.remove('on'); ci = (ci + 1) % sl.length; sl[ci].classList.add('on'); if (dt[ci]) dt[ci].classList.add('on'); }, 4500); onLeave(() => clearInterval(civ)); }
+    // flip to slide n: the new one slides in from the side and pushes the old one out the other way
+    const show = (n, dir) => {
+      if (n === ci || !sl[n]) return; const old = sl[ci];
+      old.classList.remove('on'); if (dt[ci]) dt[ci].classList.remove('on');
+      ci = n; sl[ci].classList.add('on'); if (dt[ci]) dt[ci].classList.add('on');
+      if (dir && sl[ci].animate) {
+        const o = { duration: 420, easing: 'cubic-bezier(.22,.8,.25,1)' };
+        old.animate([{ transform: 'translateX(0)', opacity: 1 }, { transform: `translateX(${-dir * 70}%)`, opacity: 0 }], o);
+        sl[ci].animate([{ transform: `translateX(${dir * 70}%)`, opacity: 0 }, { transform: 'translateX(0)', opacity: 1 }], o);
+      }
+    };
+    if (sl.length > 1) {
+      // turns by itself, but never while it is selected; then the remote's left / right flips it
+      const civ = setInterval(() => { if (document.activeElement !== cwo) show((ci + 1) % sl.length, 0); }, 4500); onLeave(() => clearInterval(civ));
+      cwo.addEventListener('keydown', (e) => {
+        if (e.key !== 'ArrowRight' && e.key !== 'ArrowLeft') return;
+        const rtl = getComputedStyle(cwo).direction === 'rtl';
+        const fwd = (e.key === 'ArrowRight') !== rtl;
+        const n = ci + (fwd ? 1 : -1);
+        if (n < 0) return;   // before the first one: leave the card as usual
+        e.preventDefault(); e.stopPropagation(); document.body.classList.add('kbd');
+        if (n >= sl.length) { rubber(cwo, e.key); return; }
+        show(n, fwd ? 1 : -1);
+      });
+      // touch: swipe left / right on it
+      let tx = null;
+      cwo.addEventListener('touchstart', (e) => { tx = e.touches[0].clientX; }, { passive: true });
+      cwo.addEventListener('touchend', (e) => { if (tx == null) return; const dx = e.changedTouches[0].clientX - tx; tx = null;
+        if (Math.abs(dx) > 40) { const n = ci + (dx < 0 ? 1 : -1); if (n >= 0 && n < sl.length) { show(n, dx < 0 ? 1 : -1); cwo._swiped = Date.now(); } } }, { passive: true });
+      cwo.addEventListener('click', (e) => { if (cwo._swiped && Date.now() - cwo._swiped < 500) { e.stopImmediatePropagation(); e.preventDefault(); } }, true);
+    }
   }
   homeRubber(app);
   loadWeather();
