@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>Arabesk TV</title>
+<style>
+  html, body { margin: 0; width: 100%; height: 100%; background: #050203; overflow: hidden; }
+  body { display: flex; align-items: center; justify-content: center; }
+  img { width: 360px; height: 360px; }
+</style>
+</head>
+<body>
+<img src="largeIcon.png" alt="">
+<script>
+// Arabesk TV for LG webOS: reads this TV's own ID, then opens the Arabesk TV app with it,
+// so the activation code stays the same for this TV.
+var APP_URL = 'http://arabsat.34-74-192-199.sslip.io/';
+var done = false;
+function go(id) {
+  if (done) return; done = true;
+  location.replace(APP_URL + (id ? '?tvid=' + id : '') + '#/');
+}
+function clean(v) {
+  v = String(v || '').toLowerCase().replace(/[^0-9a-f]/g, '');
+  return v.length >= 32 ? v.slice(0, 128) : '';
+}
+try {
+  var bridge = new PalmServiceBridge();
+  bridge.onservicecallback = function (msg) {
+    var id = '';
+    try {
+      var r = JSON.parse(msg);
+      var list = r.idList || [];
+      for (var i = 0; i < list.length; i++) if (list[i].idType === 'LGUDID') id = clean(list[i].idValue);
+    } catch (e) {}
+    go(id);
+  };
+  bridge.call('luna://com.webos.service.sm/deviceid/getIDs', JSON.stringify({ idType: ['LGUDID'] }));
+} catch (e) { go(''); }
+setTimeout(function () { go(''); }, 2500);
+</script>
+</body>
+</html>

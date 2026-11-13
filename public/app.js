@@ -186,6 +186,12 @@ S.navCount = 0; window.addEventListener('hashchange', () => { S.navCount++; });
 const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
 const standalone = window.navigator.standalone === true || (window.matchMedia && matchMedia('(display-mode: standalone)').matches);
 function device() { return store.get('dev', null); }
+// LG webOS app: the launcher passes the TV's own ID as ?tvid=..., kept so the code never changes
+function lgTvId() {
+  const q = new URLSearchParams(location.search).get('tvid');
+  if (q && /^[0-9a-f]{32,128}$/.test(q)) store.set('tvid', q);
+  return store.get('tvid', null);
+}
 async function ensureDevice() {
   let d = device();
   if (d && d.code && d.sec) return d;
@@ -222,8 +228,9 @@ async function renderLogin(err) {
     </div>${supportHTML()}</div>`;
     return;
   }
-  if (!device() && window.ArabeskAndroid) {   // Android app: fixed code for this device
-    try { const d = await (await fetch('/api/aid?id=' + encodeURIComponent(window.ArabeskAndroid.deviceId()))).json(); if (d.code) store.set('dev', d); } catch (e) {}
+  const tvId = window.ArabeskAndroid ? window.ArabeskAndroid.deviceId() : lgTvId();
+  if (!device() && tvId) {   // Android / LG TV app: fixed code for this device
+    try { const d = await (await fetch('/api/aid?id=' + encodeURIComponent(tvId))).json(); if (d.code) store.set('dev', d); } catch (e) {}
   }
   if (!device()) return renderGetCode(err);
   app.innerHTML = `<div class="login"><div class="card"><div class="big"><img src="icon-512.png?v=3" alt=""><div class="w">ARABESK <b>TV</b></div><div class="ar">أرابيسك تي في</div></div>
@@ -1452,6 +1459,14 @@ window.__androidBack = () => {
   if (location.hash && location.hash !== '#/' && location.hash !== '#') { history.back(); return true; }
   return false;
 };
+// LG TV remote: the Back button (key 461) works like the Android back button; on the home screen it leaves the app
+document.addEventListener('keydown', (e) => {
+  if (e.keyCode !== 461) return;
+  e.preventDefault(); e.stopPropagation();
+  if (window.__androidBack()) return;
+  try { if (window.PalmSystem && window.PalmSystem.platformBack) { window.PalmSystem.platformBack(); return; } } catch (er) {}
+  try { window.close(); } catch (er) {}
+}, true);
 route();
 translateNode(document.body);
 (function splash() {   // opening animation: logo bounces in, then the screen opens like two doors onto the home screen
