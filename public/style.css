@@ -825,3 +825,156 @@ body.light .h3clock .d{color:#6b5558}
   .h3sup .hc-btn::before,.h3sup .hc-btn::after{border-radius:999px;animation-name:ringpill}
 }
 @keyframes ringpill{0%{transform:scale(1);opacity:.7}100%{transform:scale(1.12,1.5);opacity:0}}
+
+/* =================== HOME v4: exact center + motion =================== */
+.home3{position:relative}
+.home3 .hcard .hc-i{display:none}
+.home3 .hcard .hc-scene{position:absolute;right:10px;bottom:8px;width:60%;height:80%;pointer-events:none;display:block}
+.home3 .hcard .hc-scene svg{width:100%;height:100%;max-width:none;filter:drop-shadow(0 8px 16px rgba(0,0,0,.45));animation:none}
+@media (min-width:900px){
+  .home3 .h3wrap{position:absolute;inset:0;padding:0;display:block;pointer-events:none;z-index:1}
+  .home3 .h3wrap>*{pointer-events:auto}
+  .home3 .h3grid{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);width:min(1240px,calc(100% - 56px))}
+  .home3 .h3bot{position:absolute;left:50%;bottom:calc(16px + var(--sb));transform:translateX(-50%);width:min(1240px,calc(100% - 56px));
+    display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:20px;align-items:end}
+  .home3 .htop{position:relative;z-index:2}
+  .h3cw2{padding-bottom:18px}
+}
+.h3info{grid-column:auto}
+
+/* ---- scenes ---- */
+.sc-mov .mv-cl,.sc-mov .mv-cr,.sc-ser .sr-prog,.sc-ser .sr-k1,.sc-ser .sr-mom,.sc-ser .sr-dad,.sc-ser .sr-arm,.sc-live .lv-thumb{transform-box:fill-box}
+.sc-live .lv-tv{transform-box:view-box;transform-origin:132px 67px;animation:lvtv 5s ease-in-out infinite}
+@keyframes lvtv{0%,24%{transform:scale(1)}40%,80%{transform:scale(1.07)}94%,100%{transform:scale(1)}}
+.sc-live .lv-scr{transform-box:view-box;transform-origin:132px 67px;animation:lvscr 5s infinite}
+@keyframes lvscr{0%,22%{transform:scale(0,.02);opacity:0}23%{opacity:1;transform:scale(.05,.02)}27%{transform:scale(1,.03)}32%,82%{transform:scale(1,1)}86%{transform:scale(1,.03)}90%{transform:scale(.05,.02);opacity:1}91%,100%{transform:scale(0,.02);opacity:0}}
+.sc-live .lv-line{transform-box:view-box;transform-origin:132px 67px;opacity:0;animation:lvline 5s infinite}
+@keyframes lvline{0%,21%{opacity:0;transform:scaleX(0)}24%{opacity:1;transform:scaleX(1)}30%,83%{opacity:0;transform:scaleX(1)}86%{opacity:1}90%{opacity:1;transform:scaleX(.05)}92%,100%{opacity:0;transform:scaleX(0)}}
+.sc-live .lv-shine{animation:lvsh 2.5s linear infinite}
+@keyframes lvsh{from{transform:translateX(0) skewX(-18deg)}to{transform:translateX(190px) skewX(-18deg)}}
+.sc-live .lv-glow{opacity:0;animation:lvgl 5s infinite}
+@keyframes lvgl{0%,24%{opacity:0}36%,80%{opacity:1}90%,100%{opacity:0}}
+.sc-live .lv-thumb{animation:lvth 5s infinite}
+@keyframes lvth{0%,8%{transform:translateY(0)}12%{transform:translateY(-8px)}17%,78%{transform:translateY(0)}82%{transform:translateY(-8px)}86%,100%{transform:translateY(0)}}
+.sc-live .lv-btn{animation:lvbt 5s infinite}
+@keyframes lvbt{0%,10%{fill:#8E121F}12%,16%{fill:#ff6b7a}20%,80%{fill:#8E121F}82%,86%{fill:#ff6b7a}90%,100%{fill:#8E121F}}
+.sc-live .lv-ir{opacity:0;animation:lvir 5s infinite}.sc-live .w2{animation-delay:.1s}.sc-live .w3{animation-delay:.2s}
+@keyframes lvir{0%,12%{opacity:0}16%{opacity:1}24%,80%{opacity:0}84%{opacity:1}90%,100%{opacity:0}}
+.sc-live .lv-dot{animation:lvdot 1s steps(1) infinite}@keyframes lvdot{50%{opacity:.15}}
+
+.sc-mov .mv-cl{transform-origin:left center;animation:mvcl 6s ease-in-out infinite}
+.sc-mov .mv-cr{transform-origin:right center;animation:mvcl 6s ease-in-out infinite}
+@keyframes mvcl{0%,10%{transform:scaleX(1)}30%,74%{transform:scaleX(.13)}94%,100%{transform:scaleX(1)}}
+.sc-mov .mv-scr{animation:mvscr 6s infinite}@keyframes mvscr{0%,14%{opacity:.15}32%,74%{opacity:1}90%,100%{opacity:.15}}
+.sc-mov .mv-film{animation:mvfilm 6s infinite}@keyframes mvfilm{0%,20%{opacity:0}34%,74%{opacity:1}86%,100%{opacity:0}}
+.sc-mov .mv-sp{opacity:0;transform-box:view-box}
+.sc-mov .mv-sp.l{transform-origin:14px 150px;animation:mvspl 6s ease-in-out infinite}
+.sc-mov .mv-sp.r{transform-origin:206px 150px;animation:mvspr 6s ease-in-out infinite}
+@keyframes mvspl{0%,24%{opacity:0;transform:rotate(-14deg)}32%{opacity:.9}52%{transform:rotate(12deg)}70%{transform:rotate(-4deg)}78%{opacity:.9}88%,100%{opacity:0;transform:rotate(-14deg)}}
+@keyframes mvspr{0%,24%{opacity:0;transform:rotate(14deg)}32%{opacity:.9}52%{transform:rotate(-12deg)}70%{transform:rotate(4deg)}78%{opacity:.9}88%,100%{opacity:0;transform:rotate(14deg)}}
+.sc-mov .mv-pj{opacity:0;animation:mvpj 6s infinite}@keyframes mvpj{0%,26%{opacity:0}34%{opacity:.35}50%{opacity:.25}60%{opacity:.38}74%{opacity:.35}86%,100%{opacity:0}}
+.sc-mov .mv-b{fill:#F3D98B;animation:mvb 1s steps(1) infinite}.sc-mov .mv-b.o{animation-delay:-.5s}
+@keyframes mvb{0%{fill:#FFE9A8}50%{fill:#4a3812}}
+
+.sc-ser .sr-scr{fill:#050203;animation:srscr 6s infinite}
+@keyframes srscr{0%,12%{fill:#050203}18%{fill:#E0223A}40%{fill:#D4AF37}60%{fill:#3a7bd5}80%{fill:#E0223A}88%,100%{fill:#050203}}
+.sc-ser .sr-st{stop-color:#000;animation:srst 6s infinite}
+@keyframes srst{0%,12%{stop-color:#000}18%{stop-color:#ff4458}40%{stop-color:#F3D98B}60%{stop-color:#5b9bff}80%{stop-color:#ff4458}88%,100%{stop-color:#000}}
+.sc-ser .sr-cone{opacity:0;animation:srcone 6s infinite}@keyframes srcone{0%,12%{opacity:0}20%,80%{opacity:1}90%,100%{opacity:0}}
+.sc-ser .sr-rim{stroke-width:1.3;stroke:transparent;animation:srrim 6s infinite}
+@keyframes srrim{0%,12%{stroke:rgba(0,0,0,0)}18%{stroke:#ff4458}40%{stroke:#F3D98B}60%{stroke:#5b9bff}80%{stroke:#ff4458}88%,100%{stroke:rgba(0,0,0,0)}}
+.sc-ser .sr-ui{opacity:0;animation:srui 6s infinite}@keyframes srui{0%,16%{opacity:0}22%,82%{opacity:1}88%,100%{opacity:0}}
+.sc-ser .sr-prog{transform-origin:left center;animation:srprog 6s linear infinite}@keyframes srprog{0%,20%{transform:scaleX(0)}84%,100%{transform:scaleX(1)}}
+.sc-ser .sr-k1{animation:srk1 6s infinite}@keyframes srk1{0%,34%{transform:translateY(0)}38%{transform:translateY(-6px)}42%{transform:translateY(0)}46%{transform:translateY(-5px)}50%,100%{transform:translateY(0)}}
+.sc-ser .sr-mom{transform-origin:center bottom;animation:srmom 6s ease-in-out infinite}@keyframes srmom{0%,44%{transform:rotate(0)}50%,64%{transform:rotate(-8deg)}70%,100%{transform:rotate(0)}}
+.sc-ser .sr-dad{transform-origin:center bottom;animation:srdad 6s ease-in-out infinite}@keyframes srdad{0%,52%{transform:rotate(0)}56%,64%{transform:rotate(4deg)}70%,100%{transform:rotate(0)}}
+.sc-ser .sr-arm{transform-origin:left bottom;animation:srarm 6s ease-in-out infinite}
+@keyframes srarm{0%,4%{transform:rotate(35deg)}9%,15%{transform:rotate(0)}22%,76%{transform:rotate(35deg)}81%,87%{transform:rotate(0)}93%,100%{transform:rotate(35deg)}}
+
+/* ---- weather effects fill the whole card ---- */
+.wxfx{position:absolute;inset:0;overflow:hidden;pointer-events:none;z-index:0}
+.h3wx .wxi,.h3wx .wxt{z-index:1}
+.h3wx[data-day="0"]::before{background:radial-gradient(130% 150% at 0% 0%,rgba(40,60,130,.35),transparent 65%)!important}
+.h3wx[data-k=sun][data-day="1"]::before{background:radial-gradient(140% 160% at 100% 0%,rgba(255,190,60,.35),transparent 60%)!important}
+.wxfx .rd{position:absolute;top:-24px;width:1.6px;height:17px;border-radius:1px;background:linear-gradient(rgba(156,201,255,0),#a9d0ff);animation:wxrd linear infinite}
+@keyframes wxrd{from{transform:translate(0,0) rotate(14deg)}to{transform:translate(-34px,190px) rotate(14deg)}}
+.wxfx .sn{position:absolute;top:-10px;aspect-ratio:1;border-radius:50%;background:#fff;opacity:.85;box-shadow:0 0 6px #fff;animation:wxsn linear infinite}
+@keyframes wxsn{0%{transform:translate(0,0)}25%{transform:translate(10px,40px)}50%{transform:translate(-6px,80px)}75%{transform:translate(8px,120px)}100%{transform:translate(0,165px)}}
+.wxfx .st{position:absolute;width:2px;height:2px;border-radius:50%;background:#fff;box-shadow:0 0 5px #fff;animation:wxtw ease-in-out infinite}
+@keyframes wxtw{0%,100%{opacity:.15;transform:scale(.6)}50%{opacity:1;transform:scale(1.5)}}
+.wxfx .sg{position:absolute;right:-60px;top:-70px;width:230px;height:230px;border-radius:50%;
+  background:radial-gradient(circle,rgba(255,236,170,1) 0 11%,rgba(255,196,70,.6) 20%,rgba(255,170,40,.2) 42%,transparent 68%);animation:wxsg 4s ease-in-out infinite}
+@keyframes wxsg{0%,100%{transform:scale(1);opacity:.85}50%{transform:scale(1.1);opacity:1}}
+.wxfx .ry{position:absolute;right:-75px;top:-85px;width:260px;height:260px;border-radius:50%;
+  background:repeating-conic-gradient(rgba(255,220,120,.22) 0 5deg,transparent 5deg 18deg);
+  -webkit-mask:radial-gradient(circle,transparent 16%,#000 28%,transparent 70%);mask:radial-gradient(circle,transparent 16%,#000 28%,transparent 70%);animation:wxspin 24s linear infinite}
+.wxfx .sg.sm{transform-origin:center;width:150px;height:150px;right:-40px;top:-50px}.wxfx .ry.sm{width:170px;height:170px;right:-50px;top:-60px;opacity:.7}
+@keyframes wxspin{to{transform:rotate(360deg)}}
+.wxfx .mg{position:absolute;left:-30px;top:-40px;width:170px;height:170px;border-radius:50%;background:radial-gradient(circle,rgba(243,217,139,.28),transparent 65%);animation:wxsg 5s ease-in-out infinite}
+.wxfx .cl{position:absolute;left:-45%;width:130px;height:42px;border-radius:42px;background:rgba(215,224,238,.17);filter:blur(5px);animation:wxcl linear infinite}
+@keyframes wxcl{from{left:-45%}to{left:110%}}
+.wxfx .fg{position:absolute;left:-50%;width:200%;height:20px;background:linear-gradient(90deg,transparent,rgba(220,226,236,.25),transparent);animation:wxfg 9s ease-in-out infinite alternate}
+.wxfx .fg.a{top:22%}.wxfx .fg.b{top:50%;animation-duration:12s}.wxfx .fg.c{top:76%;animation-duration:7s}
+@keyframes wxfg{from{transform:translateX(-18%)}to{transform:translateX(18%)}}
+.wxfx .fl{position:absolute;inset:0;background:rgba(230,236,255,.65);opacity:0;animation:wxfl 7s infinite}
+@keyframes wxfl{0%,88%{opacity:0}89%{opacity:.75}90%{opacity:0}92%{opacity:.5}93%,100%{opacity:0}}
+.h3wx .wxi svg{animation:wxbob 3.5s ease-in-out infinite}
+.h3wx[data-k=sun][data-day="1"] .wxi svg{animation:wxspin 18s linear infinite}
+@keyframes wxbob{0%,100%{transform:translateY(0)}50%{transform:translateY(-4px)}}
+
+/* ---- clock with seconds ---- */
+.h3clock .t .sec{font-size:.55em;color:var(--goldL);display:inline-block;min-width:1.3em;text-align:left}
+.h3clock .t .ap{font-size:.48em;color:var(--silverL);margin-left:2px}
+.h3clock .secbar{position:absolute;left:20%;right:20%;bottom:9px;height:3px;border-radius:3px;background:rgba(255,255,255,.08);overflow:hidden}
+.h3clock .secbar i{display:block;height:100%;width:0;background:linear-gradient(90deg,var(--red),var(--goldL));box-shadow:0 0 8px var(--goldL);transition:width 1s linear}
+
+/* ---- new releases sparkles ---- */
+.h3new .spk{position:absolute;width:12px;height:12px;z-index:1;animation:h3spk 2.6s ease-in-out infinite;pointer-events:none}
+.h3new .spk svg{width:100%;height:100%;display:block}
+.h3new .s1{right:22%;top:14%}.h3new .s2{right:9%;bottom:16%;animation-delay:.9s;width:9px;height:9px}.h3new .s3{left:44%;bottom:12%;animation-delay:1.7s;width:8px;height:8px}
+@keyframes h3spk{0%,100%{transform:scale(0) rotate(0);opacity:0}50%{transform:scale(1) rotate(90deg);opacity:1}}
+.h3new .hn-arr{animation:h3nudge 2s ease-in-out infinite}@keyframes h3nudge{0%,100%{transform:translateX(0)}50%{transform:translateX(4px)}}
+
+/* ---- continue watching circles ---- */
+.h3cw2{display:flex;flex-direction:column;align-items:flex-end;gap:9px}
+.h3cw2:empty{display:none}
+.cwl{display:flex;align-items:center;gap:7px;font-size:12.5px;font-weight:800;color:var(--silverL);letter-spacing:.4px}
+.cwdot{width:7px;height:7px;border-radius:50%;background:var(--red);animation:cwd 1.6s infinite}
+@keyframes cwd{0%{box-shadow:0 0 0 0 rgba(211,36,54,.7)}100%{box-shadow:0 0 0 8px rgba(211,36,54,0)}}
+.cwr{display:flex;gap:16px;align-items:center}
+.cwc{position:relative;width:62px;height:62px;border-radius:50%;padding:0;border:0;background:none;cursor:pointer;flex:none;color:#fff;
+  animation:h3in .6s cubic-bezier(.2,.8,.2,1) both;animation-delay:calc(.45s + var(--d));transition:transform .25s}
+.cwc.big{width:80px;height:80px}
+.cwc .halo{position:absolute;inset:-4px;border-radius:50%;background:conic-gradient(var(--red),var(--goldL),rgba(0,0,0,0) 55%,var(--red));animation:wxspin 4s linear infinite;filter:blur(3px);opacity:.75}
+.cwc .pic{position:absolute;inset:4px;border-radius:50%;background:#2a1216 center/cover}
+.cwc .ring{position:absolute;inset:0;width:100%;height:100%;transform:rotate(-90deg)}
+.cwc .trk{fill:none;stroke:rgba(0,0,0,.6);stroke-width:5}
+.cwc .prg{fill:none;stroke:var(--goldL);stroke-width:5;stroke-linecap:round;stroke-dasharray:289;stroke-dashoffset:var(--p);animation:cwring 1.4s cubic-bezier(.2,.8,.2,1) both;animation-delay:calc(.6s + var(--d))}
+@keyframes cwring{from{stroke-dashoffset:289}}
+.cwc .pl{position:absolute;left:50%;top:50%;width:26px;height:26px;margin:-13px 0 0 -13px;border-radius:50%;background:rgba(211,36,54,.92);display:grid;place-items:center;box-shadow:0 4px 12px rgba(0,0,0,.5);animation:cwpl 2s ease-in-out infinite}
+.cwc .pl svg{width:13px;height:13px;margin-left:2px}
+@keyframes cwpl{0%,100%{transform:scale(1)}50%{transform:scale(1.14)}}
+.cwc .nm{display:none}
+.cwc.big .nm{display:block;position:absolute;top:100%;left:50%;transform:translateX(-50%);margin-top:5px;width:110px;text-align:center;font-size:11px;font-weight:600;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.cwc:hover,.cwc:focus-visible{transform:scale(1.1);outline:none}.cwc:focus-visible .halo{opacity:1;filter:blur(1px)}
+
+/* ---- phone ---- */
+@media (max-width:899px){
+  .home3 .h3grid{grid-template-rows:repeat(3,minmax(56px,1fr)) auto auto;grid-template-areas:"live live" "movies movies" "series series" "wx clock" "new new"}
+  .home3 .hcard .hc-scene{right:8px;top:6px;bottom:6px;height:auto;width:44%}
+  .home3 .h3bot{display:flex;flex-direction:column;gap:8px;margin-top:8px}
+  .h3b1{display:none}
+  .h3cw2{flex-direction:row;align-items:center;justify-content:space-between;padding:7px 12px;border-radius:16px;
+    background:linear-gradient(145deg,rgba(255,255,255,.07),rgba(255,255,255,.02));border:1px solid rgba(255,255,255,.09)}
+  .cwl{font-size:12px}.cwr{gap:12px}
+  .cwc{width:44px;height:44px}.cwc.big{width:52px;height:52px}.cwc.big .nm{display:none}
+  .cwc .pl{width:20px;height:20px;margin:-10px 0 0 -10px}.cwc .pl svg{width:10px;height:10px}
+  .h3clock .secbar{bottom:6px}
+}
+
+.h3wx .wxt{text-shadow:0 1px 6px rgba(0,0,0,.65)}
+@media (max-width:899px){
+  .wxfx .sg{width:150px;height:150px;right:-55px;top:-55px;opacity:.8}
+  .wxfx .ry{width:180px;height:180px;right:-70px;top:-70px}
+  .wxfx .sg.sm{width:110px;height:110px;right:-40px;top:-40px}.wxfx .ry.sm{width:130px;height:130px;right:-50px;top:-50px}
+}

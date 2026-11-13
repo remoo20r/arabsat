@@ -109,7 +109,7 @@ function applyPrefs() {
 const AR = {
   'Live TV': 'البث المباشر', 'Movies': 'الأفلام', 'Series': 'المسلسلات', 'New Releases': 'الجديد', 'Latest movies & series': 'أحدث الأفلام والمسلسلات',
   'Continue Watching': 'كمّل المشاهدة', 'Categories': 'الأقسام', 'Search in categories': 'دوّر في الأقسام', 'Search': 'بحث', 'NEW': 'جديد',
-  'Active until': 'الاشتراك لحد', 'Expiration Date': 'تاريخ انتهاء الاشتراك', 'Customer Service': 'خدمة العملاء', 'Call': 'اتصال', 'WhatsApp': 'واتساب', 'Clear sky': 'السما صافية', 'Partly cloudy': 'غيوم خفيفة', 'Cloudy': 'غايم', 'Foggy': 'شبورة', 'Rainy': 'مطر', 'Snowy': 'تلج', 'Thunderstorm': 'عاصفة رعدية', 'Weather': 'الطقس', 'Locating…': 'بنحدد مكانك…', 'Unlimited': 'غير محدود', 'My Account': 'حسابي', 'Activation code': 'كود التفعيل', 'Username': 'اليوزرنيم',
+  'Active until': 'الاشتراك لحد', 'Expiration Date': 'تاريخ انتهاء الاشتراك', 'Customer Service': 'خدمة العملاء', 'Call': 'اتصال', 'WhatsApp': 'واتساب', 'Clear sky': 'السما صافية', 'Clear night': 'ليل صافي', 'Partly cloudy': 'غيوم خفيفة', 'Cloudy': 'غايم', 'Foggy': 'شبورة', 'Rainy': 'مطر', 'Snowy': 'تلج', 'Thunderstorm': 'عاصفة رعدية', 'Weather': 'الطقس', 'Locating…': 'بنحدد مكانك…', 'Unlimited': 'غير محدود', 'My Account': 'حسابي', 'Activation code': 'كود التفعيل', 'Username': 'اليوزرنيم',
   'Server': 'السيرفر', 'Status': 'الحالة', 'Expires': 'ينتهي', 'Connections': 'الأجهزة', 'Settings': 'الإعدادات', 'Appearance': 'الشكل',
   'Language': 'اللغة', '🌙 Dark': '🌙 داكن', '☀️ Light': '☀️ فاتح', 'Clear watch history': 'امسح سجل المشاهدة', 'Call': 'اتصال', 'WhatsApp': 'واتساب',
   'Active': 'شغال', 'Expired': 'منتهي', 'Banned': 'موقوف', 'Disabled': 'متوقف', 'LIVE': 'مباشر', 'Program guide': 'جدول البرامج',
@@ -330,6 +330,84 @@ const WX = {
 function wxIcon(code) { code = +code;
   if (code === 0) return WX.sun; if (code <= 2) return WX.part; if (code === 3) return WX.cloud; if (code <= 48) return WX.fog;
   if (code <= 67 || (code >= 80 && code <= 82)) return WX.rain; if (code <= 77 || code === 85 || code === 86) return WX.snow; return WX.storm; }
+/* ---------------- animated home scenes (seamless loops: first frame == last frame) ---------------- */
+const SCN = {
+  live: `<svg viewBox="0 0 220 150" class="sc sc-live" aria-hidden="true"><defs>
+    <linearGradient id="lvS" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#E0223A"/><stop offset=".55" stop-color="#6d0d19"/><stop offset="1" stop-color="#D4AF37"/></linearGradient>
+    <radialGradient id="lvG" cx=".5" cy=".5" r=".5"><stop offset="0" stop-color="#ff5468" stop-opacity=".55"/><stop offset="1" stop-color="#ff5468" stop-opacity="0"/></radialGradient>
+    <clipPath id="lvC"><rect x="80" y="36" width="104" height="62" rx="6"/></clipPath></defs>
+    <g class="lv-tv">
+      <ellipse class="lv-glow" cx="132" cy="66" rx="92" ry="64" fill="url(#lvG)"/>
+      <path d="M116 14l14 13M150 12l-14 15" stroke="#C9CED6" stroke-width="3" stroke-linecap="round"/>
+      <rect x="72" y="28" width="120" height="78" rx="12" fill="#1a0b0e" stroke="#C9CED6" stroke-width="3.5"/>
+      <rect x="80" y="36" width="104" height="62" rx="6" fill="#050203"/>
+      <g clip-path="url(#lvC)"><g class="lv-scr">
+        <rect x="80" y="36" width="104" height="62" rx="6" fill="url(#lvS)"/>
+        <rect class="lv-shine" x="60" y="30" width="22" height="80" fill="#fff" opacity=".16" transform="skewX(-18)"/>
+        <path d="M124 54l18 13-18 13z" fill="#fff"/>
+        <rect x="86" y="42" width="27" height="11" rx="3" fill="#000" opacity=".45"/><circle class="lv-dot" cx="91.5" cy="47.5" r="2.4" fill="#ff3b4e"/>
+        <text x="96" y="50.5" font-size="7.5" font-weight="800" fill="#fff" font-family="system-ui,sans-serif">LIVE</text></g></g>
+      <rect class="lv-line" x="80" y="66" width="104" height="2" rx="1" fill="#fff"/>
+      <path d="M112 106l-8 12M152 106l8 12" stroke="#C9CED6" stroke-width="3.5" stroke-linecap="round"/>
+    </g>
+    <g fill="none" stroke="#ff6b7a" stroke-width="2.4" stroke-linecap="round"><path class="lv-ir w1" d="M52 84a9 9 0 0 1 9-7"/><path class="lv-ir w2" d="M50 76a17 17 0 0 1 17-13"/><path class="lv-ir w3" d="M48 68a25 25 0 0 1 25-19"/></g>
+    <g transform="rotate(-30 36 120)">
+      <rect x="26" y="86" width="22" height="58" rx="8" fill="#22262d" stroke="#8a9099" stroke-width="2"/>
+      <circle class="lv-btn" cx="37" cy="97" r="4.2" fill="#D32436"/>
+      <g fill="#8a9099"><circle cx="32" cy="111" r="2"/><circle cx="42" cy="111" r="2"/><circle cx="32" cy="119" r="2"/><circle cx="42" cy="119" r="2"/></g>
+      <path d="M16 132c0-9 5-14 12-14h22c6 0 9 5 9 11v22H16z" fill="#b97f5c"/>
+      <rect class="lv-thumb" x="31" y="104" width="12" height="22" rx="6" fill="#d39a74"/>
+    </g></svg>`,
+  movies: `<svg viewBox="0 0 220 150" class="sc sc-mov" aria-hidden="true"><defs>
+    <linearGradient id="mvC" x1="0" x2="1"><stop offset="0" stop-color="#7a0f1a"/><stop offset=".25" stop-color="#D32436"/><stop offset=".5" stop-color="#8E121F"/><stop offset=".75" stop-color="#D32436"/><stop offset="1" stop-color="#7a0f1a"/></linearGradient>
+    <linearGradient id="mvB" x1="0" y1="1" x2="0" y2="0"><stop offset="0" stop-color="#fff3c4" stop-opacity=".0"/><stop offset="1" stop-color="#fff3c4" stop-opacity=".75"/></linearGradient>
+    <radialGradient id="mvS" cx=".5" cy=".45" r=".7"><stop offset="0" stop-color="#fffaf0"/><stop offset=".6" stop-color="#F3D98B"/><stop offset="1" stop-color="#9c7a22"/></radialGradient>
+    <clipPath id="mvK"><rect x="42" y="34" width="136" height="70"/></clipPath></defs>
+    <rect x="34" y="18" width="152" height="94" rx="8" fill="#14070a" stroke="#D4AF37" stroke-width="3"/>
+    <rect x="56" y="6" width="108" height="17" rx="5" fill="#1a0b0e" stroke="#D4AF37" stroke-width="2"/>
+    <text x="110" y="18" text-anchor="middle" font-size="9.5" font-weight="900" fill="#F3D98B" letter-spacing="3" font-family="system-ui,sans-serif">CINEMA</text>
+    <g class="mv-bulbs">${Array.from({ length: 11 }, (_, i) => `<circle class="mv-b ${i % 2 ? 'o' : 'e'}" cx="${44 + i * 13.2}" cy="27.5" r="2.1"/>`).join('')}</g>
+    <rect class="mv-scr" x="42" y="34" width="136" height="70" fill="url(#mvS)"/>
+    <g class="mv-film" clip-path="url(#mvK)"><circle cx="92" cy="74" r="9" fill="#9c7a22" opacity=".45"/><circle cx="128" cy="66" r="13" fill="#9c7a22" opacity=".35"/><path d="M42 104l30-22 22 14 28-26 56 34z" fill="#7a5c17" opacity=".45"/></g>
+    <g clip-path="url(#mvK)">
+      <g class="mv-cl"><rect x="42" y="34" width="68" height="70" fill="url(#mvC)"/></g>
+      <g class="mv-cr"><rect x="110" y="34" width="68" height="70" fill="url(#mvC)"/></g>
+      <path d="M42 34h136v7c-6 5-11 5-17 0-6 5-11 5-17 0-6 5-11 5-17 0-6 5-11 5-17 0-6 5-11 5-17 0-6 5-11 5-17 0-6 5-11 5-17 0-6 5-11 5-17 0z" fill="#5c0a14"/></g>
+    <path class="mv-sp l" d="M14 150L58 30h22z" fill="url(#mvB)"/><path class="mv-sp r" d="M206 150L162 30h-22z" fill="url(#mvB)"/>
+    <path class="mv-pj" d="M100 150L50 40h120L120 150z" fill="url(#mvB)" opacity=".35"/>
+    <g fill="#0b0507" stroke="#3a1418" stroke-width="1.5">${[22, 52, 82, 112, 142, 172].map(x => `<path d="M${x} 150v-20c0-6 4-9 9-9h8c5 0 9 3 9 9v20z"/>`).join('')}</g>
+    <g fill="#8E121F">${[22, 52, 82, 112, 142, 172].map(x => `<rect x="${x + 3}" y="124" width="20" height="4" rx="2"/>`).join('')}</g></svg>`,
+  series: `<svg viewBox="0 0 220 150" class="sc sc-ser" aria-hidden="true"><defs>
+    <linearGradient id="srL" x1="0" y1="0" x2="0" y2="1"><stop class="sr-st" offset="0" stop-opacity=".55"/><stop class="sr-st" offset="1" stop-opacity="0"/></linearGradient></defs>
+    <path class="sr-cone" d="M80 54h60l70 96H10z" fill="url(#srL)"/>
+    <rect x="72" y="8" width="76" height="48" rx="5" fill="#1a0b0e" stroke="#C9CED6" stroke-width="3"/>
+    <rect class="sr-scr" x="77" y="13" width="66" height="38" rx="2"/>
+    <g class="sr-ui"><path d="M105 25l12 7-12 7z" fill="#fff" opacity=".85"/><rect x="82" y="44" width="56" height="3" rx="1.5" fill="#fff" opacity=".25"/><rect class="sr-prog" x="82" y="44" width="56" height="3" rx="1.5" fill="#fff"/></g>
+    <rect x="104" y="56" width="12" height="5" fill="#C9CED6"/>
+    <g class="sr-fam" fill="#070304" stroke-linejoin="round">
+      <g class="sr-dad"><path d="M36 140c0-17 11-27 26-27s26 10 26 27z"/><circle class="sr-rim" cx="62" cy="97" r="12.5"/><path d="M50 92c2-8 8-11 12-11s10 3 12 11c-4-3-8-4-12-4s-8 1-12 4z" fill="#160a0c"/></g>
+      <g class="sr-mom"><path d="M78 140c0-15 9-24 21-24s21 9 21 24z"/><path d="M86 104c-3 8-2 14 1 18h24c3-4 4-10 1-18z" fill="#160a0c"/><circle class="sr-rim" cx="99" cy="101" r="10.5"/><circle class="sr-rim" cx="99" cy="88" r="5"/></g>
+      <g class="sr-k1"><path d="M118 142c0-12 7-18 15-18s15 6 15 18z"/><circle class="sr-rim" cx="133" cy="111" r="8.5"/></g>
+      <g class="sr-k2"><path d="M146 142c0-11 7-16 14-16s14 5 14 16z"/><circle class="sr-rim" cx="160" cy="114" r="8"/><path d="M153 110c2-5 5-6 7-6s6 1 7 6c-2-2-4-2-7-2s-5 0-7 2z" fill="#160a0c"/>
+        <g class="sr-arm"><path d="M166 132l12-17" stroke="#070304" stroke-width="5" stroke-linecap="round"/><rect x="174" y="104" width="6" height="12" rx="2" fill="#22262d" stroke="#8a9099" stroke-width="1"/></g></g>
+    </g>
+    <path d="M10 150v-9c0-5 5-7 11-7h178c6 0 11 2 11 7v9z" fill="#4a161c" stroke="#6b2028" stroke-width="2"/>
+    <path d="M24 144h172" stroke="#6b2028" stroke-width="2" stroke-linecap="round"/></svg>`,
+};
+const MOON = '<svg viewBox="0 0 24 24"><path fill="#F3D98B" d="M15.5 2.5a9.5 9.5 0 1 0 6 16.9A8 8 0 0 1 15.5 2.5z"/></svg>';
+const SPARK = '<svg viewBox="0 0 24 24" fill="#F3D98B"><path d="M12 0l2.6 9.4L24 12l-9.4 2.6L12 24l-2.6-9.4L0 12l9.4-2.6z"/></svg>';
+function wxFx(kind, day) {
+  const R = (a, b) => (a + Math.random() * (b - a)).toFixed(2);
+  const many = (n, f) => Array.from({ length: n }, f).join('');
+  const stars = (n) => many(n, () => `<i class="st" style="left:${R(0, 100)}%;top:${R(0, 70)}%;animation-delay:-${R(0, 3)}s;animation-duration:${R(1.8, 3.6)}s"></i>`);
+  const clouds = (n) => many(n, (_, i) => `<i class="cl" style="top:${R(-10, 45)}%;animation-duration:${R(18, 30)}s;animation-delay:-${R(0, 30)}s;transform:scale(${R(.7, 1.3)})"></i>`);
+  if (kind === 'rain' || kind === 'storm') return many(34, () => `<i class="rd" style="left:${R(-5, 105)}%;animation-delay:-${R(0, 1.2)}s;animation-duration:${R(.55, .95)}s;opacity:${R(.35, .85)}"></i>`) + clouds(2) + (kind === 'storm' ? '<b class="fl"></b>' : '');
+  if (kind === 'snow') return many(30, () => `<i class="sn" style="left:${R(0, 100)}%;width:${R(3, 7)}px;height:auto;animation-delay:-${R(0, 8)}s;animation-duration:${R(5, 9)}s"></i>`);
+  if (kind === 'fog') return '<i class="fg a"></i><i class="fg b"></i><i class="fg c"></i>';
+  if (kind === 'cloud') return (day ? '' : stars(10)) + clouds(4);
+  if (kind === 'part') return (day ? '<b class="sg sm"></b><b class="ry sm"></b>' : stars(16) + '<b class="mg"></b>') + clouds(2);
+  return day ? '<b class="sg"></b><b class="ry"></b>' : stars(24) + '<b class="mg"></b>';
+}
 function wxKind(code) { code = +code; if (code === 0) return 'sun'; if (code <= 2) return 'part'; if (code === 3) return 'cloud'; if (code <= 48) return 'fog';
   if (code <= 67 || (code >= 80 && code <= 82)) return 'rain'; if (code <= 77 || code === 85 || code === 86) return 'snow'; return 'storm'; }
 function wxName(code) { return { sun: 'Clear sky', part: 'Partly cloudy', cloud: 'Cloudy', fog: 'Foggy', rain: 'Rainy', snow: 'Snowy', storm: 'Thunderstorm' }[wxKind(code)]; }
@@ -341,14 +419,15 @@ async function loadWeather() {
     if (!g || Date.now() - g.at > 6 * 3600 * 1000) { g = await (await fetch('/api/geo')).json(); if (g && g.lat != null) { g.at = Date.now(); store.set('geo', g); } }
     if (!g || g.lat == null) return;
     const f = g.cc === 'US' || g.cc === 'LR' || g.cc === 'MM';
-    let w = store.get('wx', null);
+    let w = store.get('wx2', null);
     if (!w || Date.now() - w.at > 30 * 60 * 1000) {
-      const j = await (await fetch(`https://api.open-meteo.com/v1/forecast?latitude=${g.lat}&longitude=${g.lon}&current=temperature_2m,weather_code&temperature_unit=${f ? 'fahrenheit' : 'celsius'}`)).json();
-      w = { t: Math.round(j.current.temperature_2m), c: j.current.weather_code, u: f ? 'F' : 'C', at: Date.now() }; store.set('wx', w);
+      const j = await (await fetch(`https://api.open-meteo.com/v1/forecast?latitude=${g.lat}&longitude=${g.lon}&current=temperature_2m,weather_code,is_day&temperature_unit=${f ? 'fahrenheit' : 'celsius'}`)).json();
+      w = { t: Math.round(j.current.temperature_2m), c: j.current.weather_code, d: j.current.is_day, u: f ? 'F' : 'C', at: Date.now() }; store.set('wx2', w);
     }
     if (!$('#hwx')) return;
-    box.dataset.k = wxKind(w.c);
-    box.innerHTML = `<div class="wxi">${wxIcon(w.c)}</div><div class="wxt"><b>${w.t}°${w.u}</b><span class="wxs">${wxName(w.c)}</span><span class="wxl">${HI.pin}<em>${esc(g.city || g.region || '')}${g.country ? ', ' + esc(g.country) : ''}</em></span></div>`;
+    const k = wxKind(w.c), hr = new Date().getHours(), day = w.d == null ? (hr >= 6 && hr < 18) : !!+w.d;
+    box.dataset.k = k; box.dataset.day = day ? '1' : '0';
+    box.innerHTML = `<div class="wxfx">${wxFx(k, day)}</div><div class="wxi">${!day && (k === 'sun' || k === 'part') ? MOON : wxIcon(w.c)}</div><div class="wxt"><b>${w.t}°${w.u}</b><span class="wxs">${(!day && k === 'sun' ? 'Clear night' : wxName(w.c))}</span><span class="wxl">${HI.pin}<em>${esc(g.city || g.region || '')}${g.country ? ', ' + esc(g.country) : ''}</em></span></div>`;
   } catch (e) {}
 }
 function renderHome() {
@@ -356,33 +435,41 @@ function renderHome() {
   const exp = ui.exp_date ? new Date(ui.exp_date * 1000) : null;
   const cw = continueList();
   const card = (key, title, sub, go, icon) => `<button class="tile hcard hc-${key}" data-go="${go}">
-      <span class="hc-tab"></span><span class="hc-t">${title}</span><span class="hc-i">${icon}</span></button>`;
+      <span class="hc-tab"></span><span class="hc-t">${title}</span><span class="hc-scene">${icon}</span></button>`;
   app.innerHTML = `<div class="home home2 home3"><div class="hbg" id="hbg"></div>
     <div class="htop"><div class="hlogo"><img src="icon-192.png" alt=""><div><div class="w">ARAB <b>SAT</b></div><div class="ar">عرب سات</div></div></div>
       <div class="hact"><button class="ibtn" data-go="#/search">${I.search}</button><button class="ibtn" id="rf">${I.refresh}</button><button class="ibtn" id="st">${I.gear}</button></div></div>
     <div class="h3wrap"><div class="h3grid">
-      ${card('live', 'Live TV', 'Channels', '#/live', HI.live)}
-      ${card('movies', 'Movies', 'Movies', '#/movies', HI.movies)}
-      ${card('series', 'Series', 'Series', '#/series', HI.series)}
-      <div class="h3c h3wx" id="hwx"><div class="wxi">${WX.part}</div><div class="wxt"><b>--°</b><span class="wxs">Weather</span><span class="wxl">${HI.pin}<em>Locating…</em></span></div></div>
-      <div class="h3c h3clock"><div class="t" id="ck"></div><div class="dw" id="cw"></div><div class="d" id="cd"></div></div>
-      <button class="h3c h3new" data-go="#/new"><span class="hn-badge">NEW</span><span class="hn-txt"><b>New Releases</b><span>Latest movies &amp; series</span></span><span class="hn-arr">${I.chev || '&#8250;'}</span></button>
+      ${card('live', 'Live TV', 'Channels', '#/live', SCN.live)}
+      ${card('movies', 'Movies', 'Movies', '#/movies', SCN.movies)}
+      ${card('series', 'Series', 'Series', '#/series', SCN.series)}
+      <div class="h3c h3wx" id="hwx"><div class="wxfx" id="wxfx"></div><div class="wxi">${WX.part}</div><div class="wxt"><b>--°</b><span class="wxs">Weather</span><span class="wxl">${HI.pin}<em>Locating…</em></span></div></div>
+      <div class="h3c h3clock"><div class="t"><span id="ckhm"></span><span class="sec" id="cks"></span><span class="ap" id="ckap"></span></div><div class="dw" id="cw"></div><div class="d" id="cd"></div><div class="secbar"><i id="ckbar"></i></div></div>
+      <button class="h3c h3new" data-go="#/new"><i class="spk s1">${SPARK}</i><i class="spk s2">${SPARK}</i><i class="spk s3">${SPARK}</i><span class="hn-badge">NEW</span><span class="hn-txt"><b>New Releases</b><span>Latest movies &amp; series</span></span><span class="hn-arr">&#8250;</span></button>
+    </div>
+    <div class="h3bot"><span class="h3b1"></span>
       <div class="h3info">
         <div class="h3row h3exp"><span class="h3ico">${CAL}</span><span class="h3lab">Expiration Date</span><b>${exp ? exp.toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' }) : (ui.username ? 'Unlimited' : '-')}</b></div>
         <div class="h3row h3sup"><span class="h3ico">${I.phone}</span><span class="h3lab">Customer Service<br><b class="hc-num">${SUPPORT.show}</b></span>
           <span class="hcontact"><a class="hc-btn hc-call" href="tel:${SUPPORT.tel}" aria-label="Call">${I.phone}<em>Call</em></a>
           <a class="hc-btn hc-wa" href="https://wa.me/${SUPPORT.wa}" target="_blank" rel="noopener" aria-label="WhatsApp">${I.wa}<em>WhatsApp</em></a></span></div>
       </div>
+      <div class="h3cw2">${cw.length ? `<div class="cwl"><i class="cwdot"></i>Continue Watching</div><div class="cwr">${cw.slice(0, 3).map((c, k) => { const pr = Math.min(1, c.t / c.d); return `
+        <button class="cwc${k ? '' : ' big'}" data-cw="${esc(c.id)}" title="${esc(c.title)}" style="--p:${(289 * (1 - pr)).toFixed(1)};--d:${k * 0.15}s">
+          <span class="halo"></span><span class="pic" style="background-image:url('${esc(img(c.img))}')"></span>
+          <svg class="ring" viewBox="0 0 100 100"><circle class="trk" cx="50" cy="50" r="46"/><circle class="prg" cx="50" cy="50" r="46"/></svg>
+          <span class="pl">${I.play}</span><span class="nm" dir="auto">${esc(c.title)}</span></button>`; }).join('')}</div>` : ''}</div>
     </div>
-    ${cw.length ? `<div class="h3cw"><div class="section-t">Continue Watching</div><div class="hrow">${cw.map(c => `
-      <button class="cw" data-cw="${esc(c.id)}"><div class="im" style="background-image:url('${esc(img(c.img))}')"><div class="prog" style="width:${Math.min(100, c.t / c.d * 100)}%"></div></div>
-      <div class="n" dir="auto">${esc(c.title)}</div></button>`).join('')}</div></div>` : ''}
     </div></div>`;
-  const tick = () => { const n = new Date(); const t = $('#ck'); if (!t) return;
-    t.textContent = n.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' });
+  const tick = () => { const n = new Date(); const t = $('#ckhm'); if (!t) return;
+    const pt = {}; new Intl.DateTimeFormat([], { hour: 'numeric', minute: '2-digit', second: '2-digit' }).formatToParts(n).forEach(x => { pt[x.type] = x.value; });
+    t.textContent = pt.hour + ':' + pt.minute; $('#cks').textContent = ':' + pt.second; $('#ckap').textContent = pt.dayPeriod ? ' ' + pt.dayPeriod : '';
+    const sec = n.getSeconds(), bar = $('#ckbar');
+    if (sec === 0) { bar.style.transition = 'none'; bar.style.width = '0%'; void bar.offsetWidth; bar.style.transition = ''; }
+    else bar.style.width = (sec / 59 * 100).toFixed(1) + '%';
     $('#cw').textContent = n.toLocaleDateString(undefined, { weekday: 'long' });
     $('#cd').textContent = n.toLocaleDateString(undefined, { month: 'long', day: 'numeric', year: 'numeric' }); };
-  tick(); const iv = setInterval(tick, 10000); onLeave(() => clearInterval(iv));
+  tick(); const iv = setInterval(tick, 1000); onLeave(() => clearInterval(iv));
   $('#st').onclick = openSettings;
   $('#rf').onclick = () => { S.mem = {}; toast('Lists refreshed'); refreshAccount(); renderHome(); };
   $$('[data-cw]').forEach(b => b.onclick = () => resumeItem(cw.find(c => String(c.id) === b.dataset.cw)));
