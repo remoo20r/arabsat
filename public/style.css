@@ -1235,3 +1235,8 @@ body.kbd #catq:focus{outline:none}
 .pc .pfav{position:absolute;top:8px;right:8px;z-index:2;width:28px;height:28px;border-radius:50%;display:none;place-items:center;font-size:16px;line-height:1;
   color:#1a0d00;background:linear-gradient(180deg,#F3D98B,#D4AF37);box-shadow:0 4px 12px rgba(0,0,0,.5)}
 .pc .pfav.on{display:grid}
+
+/* store-review PIN box on the activation screen */
+.rvbox{margin-top:16px;display:grid;grid-template-columns:1fr auto;gap:8px;align-items:center}
+.rvbox .lbl{grid-column:1/-1}.rvbox .err{grid-column:1/-1;min-height:0}
+.rvbox .input{font-size:20px;letter-spacing:4px;text-align:center}

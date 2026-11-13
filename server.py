@@ -41,6 +41,7 @@ CACHE_TTL = 15 * 60
 CACHE_MAX = 120
 
 _cache = {}
+REVIEW_TRIES = {}
 _lock = threading.Lock()
 
 
@@ -298,6 +299,8 @@ class Handler(SimpleHTTPRequestHandler):
                 return self.aid_code(url.query)
             if url.path == "/api/code":
                 return self.check_code(url.query)
+            if url.path == "/api/review":
+                return self.review(url.query)
             if url.path.startswith("/play/"):
                 return self.play(url.path)
             if url.path.startswith("/px/"):
@@ -374,6 +377,43 @@ class Handler(SimpleHTTPRequestHandler):
             s = int(s)
             name = servers[s]["name"] if s < len(servers) else ""
         return self.send_json({"s": s, "u": rec["u"], "p": rec["p"], "name": name, "v": rec.get("at", 0)})
+
+    def review(self, query):
+        """App-store review access: a review PIN gives this device the same activation as the review code (review.json)."""
+        q = dict(urllib.parse.parse_qsl(query))
+        ip = (self.headers.get("X-Forwarded-For") or self.client_address[0]).split(",")[0].strip()
+        now = time.time()
+        with _lock:
+            tries = [t for t in REVIEW_TRIES.get(ip, []) if now - t < 3600]
+            if len(tries) >= 10:
+                return self.send_json({"ok": False, "error": "wait"}, 429)
+            tries.append(now)
+            REVIEW_TRIES[ip] = tries
+        try:
+            with open(os.path.join(ROOT, "review.json"), encoding="utf-8") as f:
+                cfg = json.load(f)
+        except Exception:
+            return self.send_json({"ok": False, "error": "off"})
+        pin = re.sub(r"\D", "", q.get("pin", ""))
+        if not pin or not hmac.compare_digest(hashlib.sha256(pin.encode()).hexdigest(), str(cfg.get("pin_sha256", ""))):
+            logline(ev="review-bad", ip=ip)
+            return self.send_json({"ok": False, "error": "pin"})
+        with _act_lock:
+            d = act_load()
+            rec, src = d.get(q.get("c", "")), d.get(str(cfg.get("from", "")))
+            if not rec or not hmac.compare_digest(rec.get("sec", ""), q.get("k", "")):
+                return self.send_json({"ok": False, "error": "code"})
+            if not src or not src.get("u"):
+                return self.send_json({"ok": False, "error": "inactive"})
+            for k in ("s", "u", "p", "host", "name"):
+                if k in src:
+                    rec[k] = src[k]
+                else:
+                    rec.pop(k, None)
+            rec.update({"at": int(now), "review": True})
+            act_save(d)
+        logline(ev="review-ok", ip=ip, code=q.get("c", ""))
+        return self.send_json({"ok": True})
 
     def read_body(self):
         n = int(self.headers.get("Content-Length", "0") or 0)

@@ -259,6 +259,28 @@ async function renderLogin(err) {
   };
   poll();
   onLeave(() => clearTimeout(pollT));
+  // app-store review access: RED button on a TV remote (or F2 on a keyboard) opens a PIN box
+  const openReview = () => {
+    if ($('#rvbox')) { $('#rvpin').focus(); return; }
+    $('.codebox').insertAdjacentHTML('beforeend', `<div class="rvbox" id="rvbox"><div class="lbl">Review access PIN</div>
+      <input class="input" id="rvpin" inputmode="numeric" autocomplete="off" maxlength="12" placeholder="PIN">
+      <button class="btn" id="rvgo">OK</button><div class="err" id="rverr"></div></div>`);
+    const go = async () => {
+      $('#rverr').textContent = '';
+      try {
+        const r = await (await fetch('/api/review?pin=' + encodeURIComponent($('#rvpin').value) + '&c=' + encodeURIComponent(d.code) + '&k=' + encodeURIComponent(d.sec))).json();
+        if (r.ok) { $('#rvbox').remove(); clearTimeout(pollT); poll(); }
+        else $('#rverr').textContent = r.error === 'pin' ? 'Wrong PIN' : r.error === 'wait' ? 'Too many tries, try later' : 'Not available right now';
+      } catch (e) { $('#rverr').textContent = 'Network error'; }
+    };
+    $('#rvgo').onclick = go;
+    $('#rvpin').onkeydown = (e) => { if (e.key === 'Enter') { e.preventDefault(); go(); } };
+    $('#rvpin').focus();
+  };
+  const rvKey = (e) => { if (!$('#dc')) { document.removeEventListener('keydown', rvKey); return; }
+    if (e.keyCode === 403 || e.key === 'ColorF0Red' || e.key === 'F2') { e.preventDefault(); openReview(); } };
+  document.addEventListener('keydown', rvKey);
+  onLeave(() => document.removeEventListener('keydown', rvKey));
 }
 // first launch: get a code tied to a Face ID / passcode key, so it never changes
 async function renderGetCode(err) {
