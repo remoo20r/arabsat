@@ -61,11 +61,21 @@ async function cached(key, params) {
   return p;
 }
 /* LG TV app: these channel groups are not offered on LG TVs at all (categories and channels whose names match) */
-const LG_BLOCK = /\b(osn|be\s?in|mbc|shahid|rotana|ssc|alkass|al\s?kass|ad\s?sports?|abu\s?dhabi\s?sports?|dubai\s?sports?|starz\w*|tod|orbit|art\s?(aflam|hekayat|cinema|movies)?|netflix|disney\w*|sky|nba|nfl|nhl|mlb|mls|ufc|wwe|fox|nbc|cbs|abc|espn|hbo|prime|dazn|eurosport|canal\+?|paramount|showtime|amc|discovery|nat\s?geo|national\s?geographic|nickelodeon|nick|cartoon|boomerang|cinemax|tnt|sports?|spor|esportes|deportes|thamanya|top\s+(series|classic|stories|moveis|movies)|power|majestic|magic|yes|ppv|vip)\b|بي\s?ان|ام\s?بي\s?سي|روتانا|شاهد|اوربت|أوربت|الثمانية|رياض|ماجيك/i;
+const LG_BLOCK = /\b(osn|be\s?in|mbc|shahid|rotana|ssc|alkass|al\s?kass|ad\s?sports?|abu\s?dhabi\s?sports?|dubai\s?sports?|starz\w*|tod|orbit|art\s?(aflam|hekayat|cinema|movies)?|netflix|disney\w*|sky|nba|nfl|nhl|mlb|mls|ufc|wwe|fox|nbc|cbs|abc|espn|hbo|prime|dazn|eurosport|canal\+?|paramount|showtime|amc|discovery|nat\s?geo|national\s?geographic|nickelodeon|nick|cartoon|boomerang|cinemax|tnt|sports?|spor|esportes|deportes|thamanya|top\s+(series|classic|stories|moveis|movies)|power|majestic|magic|yes|ppv|vip|movies?|moveis|cinema|sinema|filmes|films?|premium|series)\b|بي\s?ان|ام\s?بي\s?سي|روتانا|شاهد|اوربت|أوربت|الثمانية|رياض|ماجيك/i;
 function isLGApp() { return !!store.get('tvid', null) || /Web0S|webOS/i.test(navigator.userAgent); }
 async function lgFilterLive(action, v) {
   if (!Array.isArray(v)) return v;
-  if (action === 'get_live_categories') return v.filter(c => !LG_BLOCK.test(String(c.category_name || '')));
+  if (action === 'get_live_categories') {
+    const keep = v.filter(c => !LG_BLOCK.test(String(c.category_name || '')));
+    try {   // also drop groups left with no channels
+      const all = await api({ action: 'get_live_streams' });
+      if (Array.isArray(all) && all.length) {
+        const has = new Set(all.filter(c => !LG_BLOCK.test(String(c.name || ''))).map(c => String(c.category_id)));
+        return keep.filter(c => has.has(String(c.category_id)));
+      }
+    } catch (e) {}
+    return keep;
+  }
   let cats = [];
   try { cats = await api({ action: 'get_live_categories' }); } catch (e) {}
   const bad = new Set((Array.isArray(cats) ? cats : []).filter(c => LG_BLOCK.test(String(c.category_name || ''))).map(c => String(c.category_id)));
