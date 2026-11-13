@@ -1,5 +1,5 @@
 {
   "pin_sha256": "23f473cc5452f77fb6a63b8475a58b70607a5aab4c3d34e4494cd6bf86d3d3e1",
-  "from": "791957",
+  "from": "509604",
   "note": "Store review access (LG/Samsung QA): a reviewer TV enters the PIN and gets the same activation as code 'from'. Only the PIN hash is here."
 }
