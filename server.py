@@ -9,7 +9,9 @@
 Server hosts live in servers.json next to this file (not in git):
   [{"name": "Bella TV", "host": "http://example.com:8080"}, ...]
 """
+import base64
 import gzip
+import hashlib
 import hmac
 import json
 import secrets
@@ -28,6 +30,9 @@ PORT = int(os.environ.get("PORT", "80"))
 BIND = os.environ.get("BIND", "0.0.0.0")
 ACT_FILE = os.path.join(ROOT, "activations.json")
 KEY_FILE = os.path.join(ROOT, "activate.key")
+PK_FILE = os.path.join(ROOT, "passkeys.json")
+RP_ID = os.environ.get("RP_ID", "")  # https host used for the Face ID / passcode key
+RP_ORIGIN = os.environ.get("RP_ORIGIN", "https://" + RP_ID)
 UA = "IPTVSmartersPro"
 CACHE_TTL = 15 * 60
 CACHE_MAX = 120
@@ -101,6 +106,87 @@ def xtream_login(host, user, pw):
     return str(ui.get("auth")) == "1", ui
 
 
+def b64u_dec(x):
+    x = str(x or "")
+    return base64.urlsafe_b64decode(x + "=" * (-len(x) % 4))
+
+
+def b64u(b):
+    return base64.urlsafe_b64encode(b).rstrip(b"=").decode()
+
+
+def pk_load():
+    try:
+        with open(PK_FILE, encoding="utf-8") as f:
+            return json.load(f)
+    except Exception:
+        return {}
+
+
+def pk_save(d):
+    tmp = PK_FILE + ".tmp"
+    with open(tmp, "w", encoding="utf-8") as f:
+        json.dump(d, f)
+    os.replace(tmp, PK_FILE)
+
+
+# short-lived handshake sessions between the app (http) and the key page (https)
+SESS = {}
+SESS_TTL = 15 * 60
+
+
+def sess_get(sid):
+    rec = SESS.get(str(sid or ""))
+    if rec and time.time() - rec["ts"] < SESS_TTL:
+        return rec
+    SESS.pop(str(sid or ""), None)
+    return None
+
+
+def make_code(d, extra=None):
+    """Create a new device code inside activations dict d (caller holds _act_lock)."""
+    for _ in range(50):
+        code = "%06d" % secrets.randbelow(1000000)
+        if code not in d and code[0] != "0":
+            break
+    rec = {"sec": secrets.token_urlsafe(18), "ts": int(time.time())}
+    rec.update(extra or {})
+    d[code] = rec
+    old = [k for k, v in d.items() if not v.get("u") and not v.get("pk") and time.time() - v.get("ts", 0) > 30 * 86400]
+    for k in old:
+        d.pop(k, None)
+    return code, rec
+
+
+def verify_client_data(cdj_b64, kind, challenge):
+    cd = json.loads(b64u_dec(cdj_b64))
+    if cd.get("type") != kind:
+        raise ValueError("type")
+    if cd.get("challenge") != challenge:
+        raise ValueError("challenge")
+    if cd.get("origin") != RP_ORIGIN:
+        raise ValueError("origin")
+    return cd
+
+
+def verify_assertion(pub_b64, alg, auth_b64, cdj_b64, sig_b64):
+    from cryptography.hazmat.primitives import hashes, serialization
+    from cryptography.hazmat.primitives.asymmetric import ec, padding
+    auth = b64u_dec(auth_b64)
+    if auth[:32] != hashlib.sha256(RP_ID.encode()).digest():
+        raise ValueError("rp")
+    if not (auth[32] & 0x01):
+        raise ValueError("user not present")
+    signed = auth + hashlib.sha256(b64u_dec(cdj_b64)).digest()
+    key = serialization.load_der_public_key(b64u_dec(pub_b64))
+    if int(alg) == -7:
+        key.verify(b64u_dec(sig_b64), signed, ec.ECDSA(hashes.SHA256()))
+    elif int(alg) == -257:
+        key.verify(b64u_dec(sig_b64), signed, padding.PKCS1v15(), hashes.SHA256())
+    else:
+        raise ValueError("alg")
+
+
 CACHEABLE = {
     "get_live_categories", "get_vod_categories", "get_series_categories",
     "get_live_streams", "get_vod_streams", "get_series", "get_series_info",
@@ -159,6 +245,31 @@ class Handler(SimpleHTTPRequestHandler):
                 return self.send_json([{"id": i, "name": s["name"]} for i, s in enumerate(load_servers())])
             if url.path == "/api/p":
                 return self.api_proxy(url.query)
+            if url.path == "/api/config":
+                return self.send_json({"rp": RP_ID})
+            if url.path == "/api/sess/new":
+                sid = secrets.token_urlsafe(16)
+                SESS[sid] = {"ts": time.time()}
+                for k in [k for k, v in SESS.items() if time.time() - v["ts"] > SESS_TTL]:
+                    SESS.pop(k, None)
+                return self.send_json({"s": sid})
+            if url.path == "/api/sess":
+                q = dict(urllib.parse.parse_qsl(url.query))
+                rec = sess_get(q.get("s"))
+                if not rec:
+                    return self.send_json({"unknown": True})
+                if not rec.get("code"):
+                    return self.send_json({"pending": True})
+                SESS.pop(q.get("s"), None)
+                return self.send_json({"code": rec["code"], "sec": rec["sec"], "restored": rec.get("restored", False)})
+            if url.path == "/api/pk/options":
+                q = dict(urllib.parse.parse_qsl(url.query))
+                rec = sess_get(q.get("s"))
+                if not rec or not RP_ID:
+                    return self.send_json({"error": "expired"}, 400)
+                rec["ch"] = b64u(secrets.token_bytes(32))
+                rec["uid"] = b64u(secrets.token_bytes(16))
+                return self.send_json({"challenge": rec["ch"], "uid": rec["uid"], "rp": RP_ID})
             if url.path == "/api/newcode":
                 return self.new_code()
             if url.path == "/api/code":
@@ -178,18 +289,9 @@ class Handler(SimpleHTTPRequestHandler):
     def new_code(self):
         with _act_lock:
             d = act_load()
-            for _ in range(50):
-                code = "%06d" % secrets.randbelow(1000000)
-                if code not in d and code[0] != "0":
-                    break
-            sec = secrets.token_urlsafe(18)
-            d[code] = {"sec": sec, "ts": int(time.time())}
-            # forget codes that were never activated after 30 days
-            old = [k for k, v in d.items() if not v.get("u") and time.time() - v.get("ts", 0) > 30 * 86400]
-            for k in old:
-                d.pop(k, None)
+            code, rec = make_code(d)
             act_save(d)
-        return self.send_json({"code": code, "sec": sec})
+        return self.send_json({"code": code, "sec": rec["sec"]})
 
     def check_code(self, query):
         q = dict(urllib.parse.parse_qsl(query))
@@ -207,8 +309,70 @@ class Handler(SimpleHTTPRequestHandler):
             name = servers[s]["name"] if s < len(servers) else ""
         return self.send_json({"s": s, "u": rec["u"], "p": rec["p"], "name": name, "v": rec.get("at", 0)})
 
+    def read_body(self):
+        n = int(self.headers.get("Content-Length", "0") or 0)
+        if n > 20000:
+            raise ValueError("too big")
+        return json.loads(self.rfile.read(n) or b"{}")
+
+    def pk_post(self, path):
+        try:
+            body = self.read_body()
+        except Exception:
+            return self.send_json({"ok": False, "error": "bad request"}, 400)
+        sess = sess_get(body.get("s"))
+        if not sess:
+            return self.send_json({"ok": False, "error": "expired"})
+        try:
+            if path == "/api/pk/none":  # this browser has no Face ID / passcode keys: plain code
+                with _act_lock:
+                    d = act_load()
+                    code, rec = make_code(d)
+                    act_save(d)
+            elif path == "/api/pk/create":
+                verify_client_data(body.get("clientDataJSON"), "webauthn.create", sess.get("ch"))
+                cid, pub, alg = str(body.get("id", "")), str(body.get("pub", "")), int(body.get("alg", -7))
+                if not cid or not pub or alg not in (-7, -257):
+                    raise ValueError("key")
+                with _act_lock:
+                    pks = pk_load()
+                    d = act_load()
+                    code, rec = make_code(d, {"pk": cid})
+                    pks[cid] = {"pub": pub, "alg": alg, "code": code, "uid": sess.get("uid"), "ts": int(time.time())}
+                    pk_save(pks)
+                    act_save(d)
+            elif path == "/api/pk/get":
+                cid = str(body.get("id", ""))
+                verify_client_data(body.get("clientDataJSON"), "webauthn.get", sess.get("ch"))
+                pks = pk_load()
+                key = pks.get(cid)
+                if not key:
+                    return self.send_json({"ok": False, "error": "nokey"})
+                verify_assertion(key["pub"], key["alg"], body.get("authenticatorData"), body.get("clientDataJSON"), body.get("signature"))
+                with _act_lock:
+                    d = act_load()
+                    code = key["code"]
+                    rec = d.get(code)
+                    if not rec:  # very old unused code was cleaned up: give this key a fresh one
+                        code, rec = make_code(d, {"pk": cid})
+                        pks = pk_load()
+                        pks[cid]["code"] = code
+                        pk_save(pks)
+                        act_save(d)
+                sess["restored"] = True
+            else:
+                return self.send_json({"ok": False, "error": "not found"}, 404)
+        except Exception as e:
+            sys.stderr.write("passkey error: %r\n" % e)
+            return self.send_json({"ok": False, "error": "verify"})
+        sess["ch"] = None
+        sess["code"], sess["sec"] = code, rec["sec"]
+        return self.send_json({"ok": True, "code": code})
+
     def do_POST(self):
         url = urllib.parse.urlsplit(self.path)
+        if url.path.startswith("/api/pk/"):
+            return self.pk_post(url.path)
         if url.path != "/api/activate":
             return self.send_json({"error": "not found"}, 404)
         key = activate_key()

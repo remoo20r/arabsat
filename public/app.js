@@ -164,6 +164,7 @@ async function renderLogin(err) {
     </div>${supportHTML()}</div>`;
     return;
   }
+  if (!device()) return renderGetCode(err);
   app.innerHTML = `<div class="login"><div class="card"><div class="big"><img src="icon-512.png" alt=""><div class="w">ARAB <b>SAT</b></div><div class="ar">عرب سات</div></div>
     <div class="codebox"><div class="lbl">Your activation code</div><div class="code" id="dc">${spinner()}</div>
       <div class="hint">Send this code to Arabesk customer service to activate your app.</div>
@@ -171,8 +172,7 @@ async function renderLogin(err) {
       <div class="wait"><div class="spin" style="width:20px;height:20px;border-width:2px"></div><span id="ws">Waiting for activation...</span></div></div>
     <div class="err" id="le">${esc(err || '')}</div>
   </div>${supportHTML()}</div>`;
-  let d;
-  try { d = await ensureDevice(); } catch (e) { $('#le').textContent = 'Cannot reach Arab Sat. Check your internet.'; pollT = setTimeout(() => renderLogin(err), 5000); return; }
+  const d = device();
   $('#dc').textContent = fmtCode(d.code);
   const wa = $('.support a[href^="https://wa.me"]');
   if (wa) wa.href = `https://wa.me/${SUPPORT.wa}?text=${encodeURIComponent('Arab Sat activation code: ' + d.code)}`;
@@ -180,7 +180,7 @@ async function renderLogin(err) {
     if (!$('#dc')) return;
     try {
       const j = await checkActivation();
-      if (j === 'unknown') { renderLogin(); return; }
+      if (j === 'unknown') { renderGetCode(); return; }
       if (j && j !== 'pending') {
         const res = await tryLogin(j);
         if (res === true) { location.hash = '#/'; route(); return; }
@@ -190,6 +190,45 @@ async function renderLogin(err) {
     pollT = setTimeout(poll, 4000);
   };
   poll();
+  onLeave(() => clearTimeout(pollT));
+}
+// first launch: get a code tied to a Face ID / passcode key, so it never changes
+async function renderGetCode(err) {
+  clearTimeout(pollT);
+  app.innerHTML = `<div class="login"><div class="card"><div class="big"><img src="icon-512.png" alt=""><div class="w">ARAB <b>SAT</b></div><div class="ar">عرب سات</div></div>
+    <div class="codebox">
+      <div class="hint" style="font-size:15px;color:var(--text)">Tap the button and confirm with <b>Face ID</b> or your <b>phone passcode</b> to get your activation code.</div>
+      <div class="hint" dir="rtl" style="font-size:15px">دوس على الزرار وأكّد ببصمة الوش أو الرقم السري بتاع الموبايل علشان تاخد كود التفعيل.</div>
+      <button class="btn red" id="gk" style="margin-top:16px">Get my code · خد الكود</button>
+      <div class="wait hidden" id="gw"><div class="spin" style="width:20px;height:20px;border-width:2px"></div><span>Waiting for Face ID...</span></div></div>
+    <div class="err" id="le">${esc(err || '')}</div></div>${supportHTML()}</div>`;
+  let cfg = {}, sid = null;
+  const btn = $('#gk'); btn.disabled = true;
+  try {
+    cfg = await (await fetch('/api/config')).json();
+    if (cfg.rp) sid = (await (await fetch('/api/sess/new')).json()).s;
+  } catch (e) { $('#le').textContent = 'Cannot reach Arab Sat. Check your internet.'; pollT = setTimeout(() => renderGetCode(), 5000); return; }
+  btn.disabled = false;
+  const poll = async () => {
+    if (!$('#gk')) return;
+    try {
+      const j = await (await fetch('/api/sess?s=' + encodeURIComponent(sid))).json();
+      if (j.unknown) { renderGetCode('Time ran out. Tap the button again.'); return; }
+      if (j.code) { store.set('dev', { code: j.code, sec: j.sec }); renderLogin(); return; }
+    } catch (e) {}
+    pollT = setTimeout(poll, 2000);
+  };
+  btn.onclick = async () => {
+    $('#le').textContent = '';
+    if (!cfg.rp) { try { await ensureDevice(); renderLogin(); } catch (e) { $('#le').textContent = 'Cannot reach Arab Sat. Check your internet.'; } return; }
+    // opened straight from the tap so the phone allows it
+    const url = 'https://' + cfg.rp + '/key.html?s=' + encodeURIComponent(sid);
+    const w = window.open(url, '_blank');
+    if (!w) location.href = url;
+    $('#gw').classList.remove('hidden');
+    clearTimeout(pollT); poll();
+  };
+  document.addEventListener('visibilitychange', function vis() { if (!$('#gk')) { document.removeEventListener('visibilitychange', vis); return; } if (!document.hidden && sid) { clearTimeout(pollT); poll(); } });
   onLeave(() => clearTimeout(pollT));
 }
 async function tryLogin(j) {

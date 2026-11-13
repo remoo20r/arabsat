@@ -2,3 +2,4 @@ servers.json
 __pycache__/
 activations.json
 activate.key
+passkeys.json
