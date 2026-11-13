@@ -112,7 +112,7 @@ const AR = {
   'Active until': 'الاشتراك لحد', 'Expiration Date': 'تاريخ انتهاء الاشتراك', 'Customer Service': 'خدمة العملاء', 'Call': 'اتصال', 'WhatsApp': 'واتساب', 'Clear sky': 'السما صافية', 'Clear night': 'ليل صافي', 'Partly cloudy': 'غيوم خفيفة', 'Cloudy': 'غايم', 'Foggy': 'شبورة', 'Rainy': 'مطر', 'Snowy': 'تلج', 'Thunderstorm': 'عاصفة رعدية', 'Weather': 'الطقس', 'Locating…': 'بنحدد مكانك…', 'Unlimited': 'غير محدود', 'My Account': 'حسابي', 'Activation code': 'كود التفعيل', 'Username': 'اليوزرنيم',
   'Server': 'السيرفر', 'Status': 'الحالة', 'Expires': 'ينتهي', 'Connections': 'الأجهزة', 'Settings': 'الإعدادات', 'Appearance': 'الشكل',
   'Language': 'اللغة', '🌙 Dark': '🌙 داكن', '☀️ Light': '☀️ فاتح', 'Clear watch history': 'امسح سجل المشاهدة', 'Call': 'اتصال', 'WhatsApp': 'واتساب',
-  'Active': 'شغال', 'Expired': 'منتهي', 'Banned': 'موقوف', 'Disabled': 'متوقف', 'LIVE': 'مباشر', 'Program guide': 'جدول البرامج',
+  'Active': 'شغال', 'Expired': 'منتهي', 'Banned': 'موقوف', 'Disabled': 'متوقف', 'LIVE': 'مباشر', 'NOW': 'الآن', 'NEXT': 'التالي', 'Loading program info…': 'جاري تحميل البرنامج…', 'Program guide': 'جدول البرامج',
   'No program info': 'مفيش بيانات للبرنامج', 'No program guide for this channel': 'مفيش جدول برامج للقناة دي', 'No channels here': 'مفيش قنوات هنا',
   'Nothing here yet': 'لسه مفيش حاجة هنا', 'No categories': 'مفيش أقسام', '★ Favorites': '★ المفضلة', 'Play': 'تشغيل', 'Watch again': 'شاهد تاني',
   'Start from the beginning': 'ابدأ من الأول', '✓ Watched': '✓ اتشاف', 'Last watched': 'آخر حاجة اتشافت', 'Next episode': 'الحلقة اللي بعدها',
@@ -764,6 +764,7 @@ async function renderLive(catId) {
         <div class="tvtop"><button class="ibtn" id="tvx">${I.back}</button><div class="tx"><div class="nn" dir="auto"></div><small class="ne" dir="auto"></small></div><span class="live">LIVE</span></div>
         <div class="tvpanel"><div class="tvcats" id="tvcats"></div><div class="tvchs" id="tvchs"></div></div>
         <div class="tvguide" id="tvguide"></div>
+        <div class="tvosd" id="tvosd"></div>
       </div>
       <div class="nowbar"><span class="live">LIVE</span><div class="tx"><div class="nn" dir="auto"></div><small class="ne" dir="auto"></small></div>
         <button class="ibtn" id="fs">${I.full}</button><button class="ibtn" id="xc">${I.close}</button></div></div>
@@ -849,6 +850,7 @@ async function renderLive(catId) {
     playLive(video, c, $('#vm'));
 
     drawGuide(c);
+    if (lbx.classList.contains('tv')) showOSD();
     epgFor(c.stream_id, 2).then(l => { if (current !== c) return; const p = nowProg(l); if (p) $$('.ne', lbx).forEach(x => x.textContent = 'Now: ' + p.title); }).catch(() => {});
   }
   // ---- TV mode: full screen video with translucent categories + channels on top ----
@@ -856,10 +858,13 @@ async function renderLive(catId) {
     if (!current) return;
     lbx.classList.add('tv'); document.body.classList.add('tvon');
     tvCat = store.get('lastLiveCat_' + acckey(), catId);
-    drawTvCats(); loadTvCat(tvCat); showPanel();
+    drawTvCats(); loadTvCat(tvCat);
+    video.controls = false;   // TV mode: our own bars, not the browser's video controls
+    if (document.body.classList.contains('kbd') || !matchMedia('(hover: hover)').matches) hidePanel(); else showPanel(true);
+    showOSD();
     video.play().catch(() => {});
   }
-  function exitTV() { lbx.classList.remove('tv', 'panel'); document.body.classList.remove('tvon'); clearTimeout(hideT);
+  function exitTV() { lbx.classList.remove('tv', 'panel', 'osd'); document.body.classList.remove('tvon'); clearTimeout(hideT); clearTimeout(osdT); video.controls = true;
     if (!isWide()) { video.play().catch(() => {}); return; }   // phone: back to the player on top of the list
     stopVideo(video); lbx.classList.add('hidden'); const was = current; current = null; markOn();
     const el = was && $$('#ll .chc').find(x => list[+x.dataset.i] && list[+x.dataset.i].stream_id == was.stream_id); if (el) { el.classList.add('on'); el.focus({ preventScroll: false }); } }
@@ -873,27 +878,71 @@ async function renderLive(catId) {
     renderRows(el, tvList, 0, true);
     setTimeout(() => { const on = $('#tvchs .row.on'); if (on) { on.scrollIntoView({ block: 'center' }); on.focus({ preventScroll: true }); } }, 60);
   }
-  function showPanel() { lbx.classList.add('panel'); clearTimeout(hideT); hideT = setTimeout(() => lbx.classList.remove('panel'), 5000); }
-  $('#tvcats').onclick = (e) => { const b = e.target.closest('.cat'); if (!b) return; showPanel(); $$('#tvcats .cat').forEach(x => x.classList.toggle('on', x === b)); loadTvCat(b.dataset.c); };
-  $('#tvchs').onclick = (e) => { const r = e.target.closest('.row'); if (!r) return; showPanel(); playList = tvList; play(tvList[+r.dataset.i]); };
-  $('#tvchs').onscroll = $('#tvcats').onscroll = () => showPanel();
-  $('#tvtap').onclick = () => { if (lbx.classList.contains('panel')) { lbx.classList.remove('panel'); clearTimeout(hideT); } else showPanel(); };
+  // channel list: opened with OK (stays until Back); a mouse move opens it for 5 seconds
+  function showPanel(auto) { lbx.classList.add('panel'); lbx.classList.remove('osd'); clearTimeout(hideT); panelAuto = !!auto;
+    if (auto) hideT = setTimeout(() => { if (panelAuto) lbx.classList.remove('panel'); }, 5000); }
+  function hidePanel() { lbx.classList.remove('panel'); clearTimeout(hideT); panelAuto = false; }
+  // info bar at the bottom (like a satellite receiver): channel, date, now + next program, place and time
+  let osdT = null, panelAuto = false;
+  const two = (n) => String(n).padStart(2, '0');
+  function osdClock() { const d = new Date(); let h = d.getHours(); const ap = h >= 12 ? 'PM' : 'AM'; h = h % 12 || 12; return `${h}:${two(d.getMinutes())}<small>${ap}</small>`; }
+  function showOSD() {
+    const c = current, el = $('#tvosd'); if (!c || !el) return;
+    if (lbx.classList.contains('panel') && !panelAuto) return;
+    if (panelAuto) hidePanel();
+    const i = playList.findIndex(x => x.stream_id == c.stream_id);
+    const num = c.num || (i >= 0 ? i + 1 : '');
+    const lg = img(c.stream_icon);
+    const g = store.get('geo', null) || {};
+    const place = esc(g.city || g.region || '') + (g.country ? (g.city || g.region ? ', ' : '') + esc(g.country) : '');
+    const d = new Date();
+    const date = d.toLocaleDateString(prefs().lang === 'ar' ? 'ar-EG' : 'en-US', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' });
+    el.innerHTML = `<div class="o-ch"><span class="o-no">${esc(num)}</span><span class="o-lg">${lg ? `<img src="${esc(lg)}" alt="" onerror="this.replaceWith(Object.assign(document.createElement('b'),{textContent:'TV'}))">` : '<b>TV</b>'}</span>
+        <div class="o-nm"><div dir="auto">${esc(c.name)}</div><span class="live">LIVE</span></div></div>
+      <div class="o-pg"><div class="o-now"><span class="o-tag">NOW</span><span class="o-t" id="osdNowT"></span><b dir="auto" id="osdNow">Loading program info…</b></div>
+        <i class="o-bar"><b id="osdBar"></b></i>
+        <div class="o-next"><span class="o-tag nx">NEXT</span><span class="o-t" id="osdNextT"></span><span dir="auto" id="osdNext"></span></div></div>
+      <div class="o-rt"><div class="o-clk" id="osdClk">${osdClock()}</div><div class="o-dt">${esc(date)}</div>${place ? `<div class="o-pl">${HI.pin}<span>${place}</span></div>` : ''}</div>`;
+    lbx.classList.add('osd'); clearTimeout(osdT); osdT = setTimeout(() => lbx.classList.remove('osd'), 6000);
+    epgFor(c.stream_id, 4).then(l => {
+      if (current !== c || !$('#osdNow')) return;
+      const n = Date.now() / 1000; const k = l.findIndex(x => x.start <= n && (!x.end || x.end > n));
+      const now = k >= 0 ? l[k] : null, next = k >= 0 ? l[k + 1] : l.find(x => x.start > n);
+      $('#osdNow').textContent = now ? now.title : 'No program info';
+      $('#osdNowT').textContent = now ? hm(now.start) + (now.end ? ' – ' + hm(now.end) : '') : '';
+      if (now && now.end > now.start) $('#osdBar').style.width = Math.max(0, Math.min(100, (n - now.start) / (now.end - now.start) * 100)) + '%';
+      $('#osdNext').textContent = next ? next.title : '—';
+      $('#osdNextT').textContent = next ? hm(next.start) : '';
+    }).catch(() => { if ($('#osdNow')) $('#osdNow').textContent = 'No program info'; });
+  }
+  const osdTick = setInterval(() => { const k = $('#osdClk'); if (k) k.innerHTML = osdClock(); else clearInterval(osdTick); }, 10000);
+  $('#tvcats').onclick = (e) => { const b = e.target.closest('.cat'); if (!b) return; showPanel(panelAuto); $$('#tvcats .cat').forEach(x => x.classList.toggle('on', x === b)); loadTvCat(b.dataset.c); };
+  $('#tvchs').onclick = (e) => { const r = e.target.closest('.row'); if (!r) return; showPanel(panelAuto); playList = tvList; play(tvList[+r.dataset.i]); };
+  $('#tvchs').onscroll = $('#tvcats').onscroll = () => { if (panelAuto) showPanel(true); };
+  $('#tvtap').onclick = () => { if (lbx.classList.contains('panel')) hidePanel(); else { showPanel(true); } };
   $('#tvtap').ondblclick = () => exitTV();
-  lbx.addEventListener('mousemove', () => { if (lbx.classList.contains('tv')) showPanel(); });
+  lbx.addEventListener('mousemove', () => { if (lbx.classList.contains('tv') && !document.body.classList.contains('kbd') && (!lbx.classList.contains('panel') || panelAuto)) showPanel(true); });
   $('#tvx').onclick = exitTV;
   $('#fs').onclick = enterTV;
   $('#xc').onclick = () => { stopVideo(video); current = null; markOn(); if (!isWide()) lbx.classList.add('hidden'); };
   function zap(d) { if (!current || !playList.length) return; let i = playList.findIndex(c => c.stream_id == current.stream_id); i = (i + d + playList.length) % playList.length; play(playList[i]); }
+  const isBack = (e) => e.key === 'Escape' || e.key === 'Backspace' || e.keyCode === 461 || e.key === 'GoBack' || e.key === 'BrowserBack';
   function onKey(e) {
     if (!lbx.classList.contains('tv')) return;
     const panel = lbx.classList.contains('panel');
-    if (e.key === 'Escape' || e.key === 'Backspace') { e.preventDefault(); e.stopPropagation(); if (panel) lbx.classList.remove('panel'); else exitTV(); return; }
-    if (!panel) {
-      // any button brings the menus back (up/down still switch channel straight away)
-      if (e.key === 'ArrowUp') { e.preventDefault(); e.stopPropagation(); zap(-1); showPanel(); }
-      else if (e.key === 'ArrowDown') { e.preventDefault(); e.stopPropagation(); zap(1); showPanel(); }
-      else { e.preventDefault(); e.stopPropagation(); showPanel(); const on = $('#tvchs .row.on') || $('#tvchs .row'); if (on) on.focus({ preventScroll: true }); }
-    } else showPanel();
+    if (isBack(e)) {   // Back: close the channel list; with no list open, leave the channel
+      e.preventDefault(); e.stopImmediatePropagation();
+      if (panel) hidePanel(); else exitTV();
+      return;
+    }
+    if (panel) { if (panelAuto) showPanel(true); return; }   // list open: arrows move inside it, OK plays
+    e.preventDefault(); e.stopImmediatePropagation(); document.body.classList.add('kbd');
+    if (e.key === 'ArrowUp' || e.key === 'ChannelUp' || e.key === 'PageUp' || e.keyCode === 33) zap(1);          // up = next channel
+    else if (e.key === 'ArrowDown' || e.key === 'ChannelDown' || e.key === 'PageDown' || e.keyCode === 34) zap(-1); // down = previous channel
+    else if (e.key === 'Enter' || e.key === ' ') {   // OK: show the channel list
+      showPanel(false); lbx.classList.remove('osd');
+      const on = $('#tvchs .row.on') || $('#tvchs .row'); if (on) { on.focus({ preventScroll: true }); on.scrollIntoView({ block: 'center' }); }
+    } else showOSD();   // any other button: show the info bar
   }
   document.addEventListener('keydown', onKey, true);
   if (catId != null) loadCat(String(catId));
@@ -1462,7 +1511,8 @@ window.__androidBack = () => {
 // LG TV remote: the Back button (key 461) works like the Android back button; on the home screen it leaves the app
 document.addEventListener('keydown', (e) => {
   if (e.keyCode !== 461) return;
-  e.preventDefault(); e.stopPropagation();
+  if (document.querySelector('.livebox.tv')) return;   // live TV full screen handles its own Back
+  e.preventDefault(); e.stopImmediatePropagation();
   if (window.__androidBack()) return;
   try { if (window.PalmSystem && window.PalmSystem.platformBack) { window.PalmSystem.platformBack(); return; } } catch (er) {}
   try { window.close(); } catch (er) {}

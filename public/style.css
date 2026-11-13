@@ -1196,3 +1196,36 @@ body.kbd #catq:focus{outline:none}
 #splash.closing .sp-beam,#splash.closing .sp-floor,#splash.closing .sp-st{transition:opacity .5s;opacity:0!important;animation-play-state:paused}
 #splash.out .sp-c,#splash.out .sp-screen{opacity:0;transition:none}
 #splash.out .sp-cur.l,#splash.out .sp-cur.r{transition:transform 1.15s cubic-bezier(.65,0,.3,1);transition-delay:.1s}
+
+/* ===== live TV info bar (satellite-receiver style), shown on channel change or any remote button ===== */
+.tvosd{display:none}
+.livebox.tv .tvosd{display:grid;grid-template-columns:auto 1fr auto;align-items:center;gap:28px;position:absolute;z-index:5;
+  left:calc(28px + var(--sl));right:calc(28px + var(--sr));bottom:calc(26px + var(--sb));padding:18px 26px;border-radius:22px;
+  background:linear-gradient(180deg,rgba(26,8,12,.82),rgba(6,3,5,.9));backdrop-filter:blur(16px) saturate(1.2);-webkit-backdrop-filter:blur(16px) saturate(1.2);
+  border:1px solid rgba(212,175,55,.38);box-shadow:0 18px 50px rgba(0,0,0,.65),inset 0 1px 0 rgba(255,255,255,.08);
+  color:#F2F4F7;opacity:0;transform:translateY(30px);pointer-events:none;transition:opacity .3s,transform .3s}
+.livebox.tv.osd .tvosd{opacity:1;transform:none}
+.livebox.tv.panel .tvosd{opacity:0!important}
+.tvosd .o-ch{display:flex;align-items:center;gap:16px;min-width:0;max-width:420px}
+.tvosd .o-no{font-size:34px;font-weight:900;color:#F3D98B;min-width:56px;text-align:center;font-variant-numeric:tabular-nums}
+.tvosd .o-lg{width:96px;height:64px;flex:none;border-radius:12px;background:rgba(255,255,255,.07);display:grid;place-items:center;overflow:hidden;border:1px solid rgba(203,209,217,.18)}
+.tvosd .o-lg img{max-width:88%;max-height:84%;object-fit:contain}.tvosd .o-lg b{color:#CBD1D9;font-weight:900}
+.tvosd .o-nm{min-width:0}.tvosd .o-nm div{font-size:22px;font-weight:800;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:260px}
+.tvosd .o-nm .live{display:inline-block;margin-top:6px}
+.tvosd .o-pg{min-width:0;border-left:1px solid rgba(203,209,217,.18);border-right:1px solid rgba(203,209,217,.18);padding:0 26px}
+.tvosd .o-now,.tvosd .o-next{display:flex;align-items:center;gap:10px;min-width:0;white-space:nowrap}
+.tvosd .o-now b{font-size:20px;overflow:hidden;text-overflow:ellipsis}
+.tvosd .o-next{margin-top:8px;color:#A9B0BA;font-size:16px}.tvosd .o-next span:last-child{overflow:hidden;text-overflow:ellipsis}
+.tvosd .o-tag{flex:none;font-size:11px;font-weight:900;letter-spacing:.8px;padding:3px 8px;border-radius:6px;background:var(--red);color:#fff}
+.tvosd .o-tag.nx{background:rgba(203,209,217,.2);color:#EDF1F6}
+.tvosd .o-t{flex:none;color:#F3D98B;font-size:14px;font-weight:700;font-variant-numeric:tabular-nums}
+.tvosd .o-bar{display:block;height:5px;border-radius:5px;background:rgba(255,255,255,.14);margin-top:10px;overflow:hidden}
+.tvosd .o-bar b{display:block;height:100%;width:0;background:linear-gradient(90deg,#D32436,#F3D98B);border-radius:5px}
+.tvosd .o-rt{text-align:right;white-space:nowrap}
+.tvosd .o-clk{font-size:38px;font-weight:900;line-height:1;font-variant-numeric:tabular-nums}.tvosd .o-clk small{font-size:15px;margin-left:4px;color:#CBD1D9}
+.tvosd .o-dt{margin-top:6px;color:#CBD1D9;font-size:14px}
+.tvosd .o-pl{margin-top:4px;color:#A9B0BA;font-size:13px;display:flex;align-items:center;justify-content:flex-end;gap:5px}.tvosd .o-pl svg{width:14px;height:14px}
+@media (max-width:899px){
+  .livebox.tv .tvosd{grid-template-columns:1fr;gap:10px;left:10px;right:10px;bottom:10px;padding:12px 14px}
+  .tvosd .o-pg{border:0;padding:0}.tvosd .o-rt{display:none}.tvosd .o-no{font-size:22px;min-width:0}.tvosd .o-lg{width:64px;height:44px}
+}
