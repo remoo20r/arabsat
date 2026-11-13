@@ -133,6 +133,12 @@ class Handler(SimpleHTTPRequestHandler):
         self.wfile.write(body)
 
     def server_host(self, idx):
+        idx = str(idx)
+        if idx.startswith("c"):  # custom server saved with one activation code
+            rec = act_load().get(idx[1:]) or {}
+            if not rec.get("host"):
+                raise ValueError("bad server")
+            return rec["host"]
         servers = load_servers()
         i = int(idx)
         if i < 0 or i >= len(servers):
@@ -186,10 +192,14 @@ class Handler(SimpleHTTPRequestHandler):
             return self.send_json({"unknown": True})
         if not rec.get("u"):
             return self.send_json({"pending": True})
-        servers = load_servers()
-        s = int(rec["s"])
-        return self.send_json({"s": s, "u": rec["u"], "p": rec["p"],
-                               "name": servers[s]["name"] if s < len(servers) else "", "v": rec.get("at", 0)})
+        s = rec["s"]
+        if str(s).startswith("c"):
+            name = rec.get("name") or "Arab Sat"
+        else:
+            servers = load_servers()
+            s = int(s)
+            name = servers[s]["name"] if s < len(servers) else ""
+        return self.send_json({"s": s, "u": rec["u"], "p": rec["p"], "name": name, "v": rec.get("at", 0)})
 
     def do_POST(self):
         url = urllib.parse.urlsplit(self.path)
@@ -201,8 +211,21 @@ class Handler(SimpleHTTPRequestHandler):
         try:
             body = json.loads(self.rfile.read(int(self.headers.get("Content-Length", "0") or 0)) or b"{}")
             code = str(body.get("code", "")).replace(" ", "").strip()
-            s, user, pw = int(body.get("s", -1)), str(body.get("u", "")).strip(), str(body.get("p", "")).strip()
-            host = self.server_host(s)
+            user, pw = str(body.get("u", "")).strip(), str(body.get("p", "")).strip()
+            custom = str(body.get("host") or "").strip()
+            if custom:
+                if not custom.lower().startswith(("http://", "https://")):
+                    custom = "http://" + custom
+                pu = urllib.parse.urlsplit(custom)
+                if not pu.hostname:
+                    return self.send_json({"ok": False, "error": "url"})
+                host = "%s://%s" % (pu.scheme, pu.netloc)
+                s = "c" + code
+                sname = str(body.get("name") or "").strip()[:40] or "Arab Sat"
+            else:
+                s = int(body.get("s", -1))
+                host = self.server_host(s)
+                sname = load_servers()[s]["name"]
         except Exception:
             return self.send_json({"ok": False, "error": "bad request"}, 400)
         with _act_lock:
@@ -222,8 +245,13 @@ class Handler(SimpleHTTPRequestHandler):
             if not rec:
                 return self.send_json({"ok": False, "error": "code"})
             rec.update({"s": s, "u": user, "p": pw, "at": int(time.time())})
+            if custom:
+                rec.update({"host": host, "name": sname})
+            else:
+                rec.pop("host", None)
+                rec.pop("name", None)
             act_save(d)
-        return self.send_json({"ok": True, "server": load_servers()[s]["name"], "status": ui.get("status"),
+        return self.send_json({"ok": True, "server": sname, "status": ui.get("status"),
                                "exp_date": ui.get("exp_date")})
 
     def api_proxy(self, query):
