@@ -369,8 +369,42 @@ class Handler(SimpleHTTPRequestHandler):
         sess["code"], sess["sec"] = code, rec["sec"]
         return self.send_json({"ok": True, "code": code})
 
+    def diag(self):
+        """Owner-only check of stream access from this server (needs the activation key)."""
+        key = activate_key()
+        if not key or not hmac.compare_digest(self.headers.get("X-Key", ""), key):
+            return self.send_json({"error": "not found"}, 404)
+        try:
+            body = self.read_body()
+        except Exception:
+            return self.send_json({"error": "bad request"}, 400)
+        out = []
+        for t in body.get("tests", [])[:12]:
+            host = self.server_host(t["s"])
+            url = "%s/%s/%s/%s/%s" % (host, t.get("kind", "live"), t["u"], t["p"], t["file"])
+            req = urllib.request.Request(url, headers={"User-Agent": t.get("ua", "AppleCoreMedia/1.0.0.21A329 (iPhone; U; CPU OS 17_0 like Mac OS X)"),
+                                                       "Origin": "http://arabsat.example", "Range": "bytes=0-300000"})
+            t0 = time.time()
+            rec = {"file": t["file"], "s": t["s"]}
+            try:
+                with urllib.request.urlopen(req, timeout=15) as r:
+                    first = r.read(1)
+                    rec["ttfb"] = round(time.time() - t0, 2)
+                    data = first + r.read(300000)
+                    rec.update({"status": r.status, "type": r.headers.get("Content-Type"), "cors": r.headers.get("Access-Control-Allow-Origin"),
+                                "final": r.geturl().split("/")[2], "bytes": len(data), "secs": round(time.time() - t0, 2),
+                                "head": data[:300].decode("latin-1") if b"#EXT" in data[:20] else ""})
+            except urllib.error.HTTPError as e:
+                rec.update({"status": e.code, "cors": e.headers.get("Access-Control-Allow-Origin")})
+            except Exception as e:
+                rec["error"] = repr(e)[:200]
+            out.append(rec)
+        return self.send_json({"results": out})
+
     def do_POST(self):
         url = urllib.parse.urlsplit(self.path)
+        if url.path == "/api/diag":
+            return self.diag()
         if url.path.startswith("/api/pk/"):
             return self.pk_post(url.path)
         if url.path != "/api/activate":
