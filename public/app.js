@@ -480,8 +480,9 @@ function stopVideo(v) {
   if (v) { v.onerror = v.oncanplay = v.onplaying = v.onwaiting = null; try { v.pause(); v.removeAttribute('src'); v.load(); } catch (e) {} }
 }
 // remembers per server whether the fast engine works (blocked servers go straight to HLS next time)
-function tsOk(s) { const m = store.get('tsok', {}); return m[s] !== false; }
-function tsMark(s, ok) { const m = store.get('tsok', {}); m[s] = ok; store.set('tsok', m); }
+// fast engine is tried first on every channel; a failure only falls back for that one play
+function tsOk() { return true; }
+function tsMark() {}
 async function playLive(v, c, msg) {
   const token = (S.playTok = (S.playTok || 0) + 1);
   stopVideo(v);
@@ -507,7 +508,7 @@ async function playLive(v, c, msg) {
         const fallback = () => { if (token !== S.playTok) return; if (!started) tsMark(S.acc.s, false); playHls(v, c, msg, token, failMsg); };
         p.on(mpegts.Events.ERROR, (type, detail) => { if (token !== S.playTok) return; if (started && type === mpegts.ErrorTypes.MEDIA_ERROR) return; fallback(); });
         const pr = v.play(); if (pr && pr.catch) pr.catch((err) => { if (err && err.name === 'NotAllowedError') tapToPlay(v, msg); });
-        setTimeout(() => { if (token === S.playTok && !started && S.ts === p) fallback(); }, 9000);
+        setTimeout(() => { if (token === S.playTok && !started && S.ts === p) fallback(); }, 7000);
         return;
       }
     } catch (e) {}
