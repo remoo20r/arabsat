@@ -1381,7 +1381,7 @@ function homeRubber(root) {
     el.addEventListener('click', (e) => { if (moved) { moved = false; e.preventDefault(); e.stopImmediatePropagation(); } }, true);
   });
 }
-const NAV_SEL = '.chc,.pbig,.tile,.cat,.row,.pc,.ep,.cw,.ibtn,.catbtn,.newbtn,.chip,.btn,.srv,.input,.star.on';
+const NAV_SEL = '.chc,.pbig,.tile,.cat,.row,.pc,.ep,.cw,.ibtn,.catbtn,.newbtn,.chip,.btn,.srv,.input,.star.on,#catq';
 function navCandidates() {
   let scope = document;
   const tv = document.querySelector('.livebox.tv'); if (tv) scope = tv;
@@ -1406,14 +1406,16 @@ function navMove(dir) {
     const b = el.getBoundingClientRect(), bx = b.left + b.width / 2, by = b.top + b.height / 2;
     const dx = bx - ax, dy = by - ay;
     let main, cross;
-    if (dir === 'ArrowRight') { if (b.left < a.right - 4 && dx <= 4) continue; main = Math.max(0, b.left - a.right); cross = Math.abs(dy); }
-    else if (dir === 'ArrowLeft') { if (b.right > a.left + 4 && dx >= -4) continue; main = Math.max(0, a.left - b.right); cross = Math.abs(dy); }
-    else if (dir === 'ArrowDown') { if (b.top < a.bottom - 4 && dy <= 4) continue; main = Math.max(0, b.top - a.bottom); cross = Math.abs(dx); }
-    else { if (b.bottom > a.top + 4 && dy >= -4) continue; main = Math.max(0, a.top - b.bottom); cross = Math.abs(dx); }
+    // left/right stay on the same row: only things that share part of this row count; otherwise the item stretches
+    const sameRow = b.bottom > a.top + 4 && b.top < a.bottom - 4;
+    if (dir === 'ArrowRight') { if (!sameRow || (b.left < a.right - 4 && dx <= 4)) continue; main = Math.max(0, b.left - a.right); cross = Math.abs(dy); }
+    else if (dir === 'ArrowLeft') { if (!sameRow || (b.right > a.left + 4 && dx >= -4)) continue; main = Math.max(0, a.left - b.right); cross = Math.abs(dy); }
+    else if (dir === 'ArrowDown') { if (b.top < a.bottom - 8) continue; main = Math.max(0, b.top - a.bottom); cross = (b.right > a.left && b.left < a.right) ? 0 : Math.abs(dx) * 1.6; }
+    else { if (b.bottom > a.top + 8) continue; main = Math.max(0, a.top - b.bottom); cross = (b.right > a.left && b.left < a.right) ? 0 : Math.abs(dx) * 1.6; }
     const sc = main + cross * 2.2 + (el.parentElement === cur.parentElement ? -6 : 0);
     if (sc < bs) { bs = sc; best = el; }
   }
-  if (best) { best.focus({ preventScroll: true }); best.scrollIntoView({ block: 'nearest', inline: 'nearest' }); }
+  if (best) { try { best.focus({ preventScroll: true, focusVisible: true }); } catch (e) { best.focus({ preventScroll: true }); } best.scrollIntoView({ block: 'nearest', inline: 'nearest' }); }
   else rubber(cur, dir);
 }
 document.addEventListener('keydown', (e) => {

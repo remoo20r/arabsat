@@ -1102,3 +1102,12 @@ body.light .shead{background:linear-gradient(180deg,rgba(255,255,255,.97),rgba(2
 @keyframes s2dad{0%,30%{transform:rotate(0)}38%,58%{transform:rotate(7deg)}66%,100%{transform:rotate(0)}}
 .h3cw2{justify-content:flex-end}
 @media (max-width:899px){ .h3cw2{justify-content:center;background:none;border:0;padding:4px 0 10px} .cwo{width:min(300px,86%);height:66px} }
+/* keyboard focus always visible (Safari sometimes skips :focus-visible after script focus) */
+body.kbd :focus:not(:focus-visible){outline:2px solid var(--goldL);outline-offset:3px}
+body.kbd .pc:focus,body.kbd .cw:focus{transform:translateY(-6px) scale(1.05);border-color:var(--gold);box-shadow:0 0 0 2px var(--gold),0 14px 30px rgba(0,0,0,.6),0 0 24px rgba(212,175,55,.35);z-index:2;outline:none}
+body.kbd .cat:focus{background:rgba(212,175,55,.14);color:#fff;border-color:rgba(212,175,55,.7);transform:translateX(5px);outline:none}
+body.kbd .chc:focus{transform:translateY(-6px) scale(1.04);border-color:var(--gold);box-shadow:0 0 0 2px var(--gold),0 16px 34px rgba(0,0,0,.6);z-index:2;outline:none}
+body.kbd .ep:focus,body.kbd .row:focus{border-color:var(--gold);box-shadow:0 0 0 2px var(--gold);outline:none}
+body.kbd #catq:focus{outline:none}
+.catsearch:focus-within{border-color:var(--gold);box-shadow:0 0 0 2px rgba(212,175,55,.45)}
+.pc,.ep,.row,.cat,.chc,.cw,.chip{scroll-margin-top:96px;scroll-margin-bottom:24px}
