@@ -1,0 +1,32 @@
+plugins { id 'com.android.application' }
+def ver = (System.getenv('GITHUB_RUN_NUMBER') ?: '1').toInteger()
+android {
+    namespace 'com.arabesk.tv'
+    compileSdk 34
+    defaultConfig {
+        applicationId 'com.arabesk.tv'
+        minSdk 21
+        targetSdk 34
+        versionCode ver
+        versionName "1.0.${ver}"
+        buildConfigField "String", "APP_URL", '"http://arabsat.34-74-192-199.sslip.io/"'
+    }
+    buildFeatures { buildConfig true }
+    // The signing key is never stored in this repo. CI gets it from the KS_B64 / KS_PASS secrets;
+    // without them the build is signed with the debug key (fine for testing only).
+    def ksFile = System.getenv('KS_FILE')
+    signingConfigs {
+        if (ksFile) {
+            release {
+                storeFile file(ksFile)
+                storePassword System.getenv('KS_PASS')
+                keyAlias 'arabesk'
+                keyPassword System.getenv('KS_PASS')
+            }
+        }
+    }
+    buildTypes {
+        release { minifyEnabled false; signingConfig ksFile ? signingConfigs.release : signingConfigs.debug }
+    }
+    compileOptions { sourceCompatibility JavaVersion.VERSION_17; targetCompatibility JavaVersion.VERSION_17 }
+}

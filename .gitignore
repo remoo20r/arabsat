@@ -3,3 +3,9 @@ __pycache__/
 activations.json
 activate.key
 passkeys.json
+android/local.properties
+android/build/
+android/app/build/
+android/.gradle/
+*.keystore
+*.jks

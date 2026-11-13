@@ -9,6 +9,9 @@
 Server hosts live in servers.json next to this file (not in git):
   [{"name": "Bella TV", "host": "http://example.com:8080"}, ...]
 """
+import re
+import mimetypes
+mimetypes.add_type("application/vnd.android.package-archive", ".apk")
 import base64
 import gzip
 import hashlib
@@ -160,7 +163,7 @@ def make_code(d, extra=None):
     rec = {"sec": secrets.token_urlsafe(18), "ts": int(time.time())}
     rec.update(extra or {})
     d[code] = rec
-    old = [k for k, v in d.items() if not v.get("u") and not v.get("pk") and time.time() - v.get("ts", 0) > 30 * 86400]
+    old = [k for k, v in d.items() if not v.get("u") and not v.get("pk") and not v.get("aid") and time.time() - v.get("ts", 0) > 30 * 86400]
     for k in old:
         d.pop(k, None)
     return code, rec
@@ -282,6 +285,8 @@ class Handler(SimpleHTTPRequestHandler):
                 return self.send_json({"challenge": rec["ch"], "uid": rec["uid"], "rp": RP_ID})
             if url.path == "/api/newcode":
                 return self.new_code()
+            if url.path == "/api/aid":
+                return self.aid_code(url.query)
             if url.path == "/api/code":
                 return self.check_code(url.query)
             if url.path.startswith("/play/"):
@@ -293,6 +298,12 @@ class Handler(SimpleHTTPRequestHandler):
         except Exception as e:  # noqa
             sys.stderr.write("error: %r\n" % e)
             return self.send_json({"error": "server error"}, 502)
+        if url.path in ("/apk", "/android", "/app"):   # short link for the Android app download
+            self.send_response(302)
+            self.send_header("Location", "/ArabeskTV.apk")
+            self.send_header("Content-Length", "0")
+            self.end_headers()
+            return
         if url.path == "/":
             self.path = "/index.html"
         return super().do_GET()
@@ -322,6 +333,20 @@ class Handler(SimpleHTTPRequestHandler):
         with _act_lock:
             d = act_load()
             code, rec = make_code(d)
+            act_save(d)
+        return self.send_json({"code": code, "sec": rec["sec"]})
+
+    def aid_code(self, query):
+        """Android app: one fixed code per device (hashed Android ID), so reinstalling never changes it."""
+        aid = dict(urllib.parse.parse_qsl(query)).get("id", "")
+        if not re.fullmatch(r"[0-9a-f]{32,128}", aid):
+            raise ValueError("bad id")
+        with _act_lock:
+            d = act_load()
+            for code, rec in d.items():
+                if rec.get("aid") == aid:
+                    return self.send_json({"code": code, "sec": rec["sec"]})
+            code, rec = make_code(d, {"aid": aid})
             act_save(d)
         return self.send_json({"code": code, "sec": rec["sec"]})
 

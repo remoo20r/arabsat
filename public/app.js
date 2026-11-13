@@ -222,6 +222,9 @@ async function renderLogin(err) {
     </div>${supportHTML()}</div>`;
     return;
   }
+  if (!device() && window.ArabeskAndroid) {   // Android app: fixed code for this device
+    try { const d = await (await fetch('/api/aid?id=' + encodeURIComponent(window.ArabeskAndroid.deviceId()))).json(); if (d.code) store.set('dev', d); } catch (e) {}
+  }
   if (!device()) return renderGetCode(err);
   app.innerHTML = `<div class="login"><div class="card"><div class="big"><img src="icon-512.png?v=3" alt=""><div class="w">ARABESK <b>TV</b></div><div class="ar">أرابيسك تي في</div></div>
     <div class="codebox"><div class="lbl">Your activation code</div><div class="code" id="dc">${spinner()}</div>
@@ -1441,6 +1444,14 @@ document.addEventListener('keydown', (e) => {
 });
 document.addEventListener('mousedown', () => document.body.classList.remove('kbd'));
 
+// Android app back button: close what's open, go back, or tell the app to exit (false)
+window.__androidBack = () => {
+  if (document.querySelector('.livebox.tv')) { document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true })); return true; }
+  const sh = document.querySelector('.sheet-bg'); if (sh) { sh.remove(); return true; }
+  if (fpEl) { closePlayer(); return true; }
+  if (location.hash && location.hash !== '#/' && location.hash !== '#') { history.back(); return true; }
+  return false;
+};
 route();
 translateNode(document.body);
 (function splash() {   // opening animation: logo bounces in, then the screen opens like two doors onto the home screen
