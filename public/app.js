@@ -1,4 +1,4 @@
-/* Arab Sat - web IPTV player (Xtream). Black / red / silver, same identity as the ArabeskTV app. */
+/* Arabesk TV - web IPTV player (Xtream). Black / red / silver, same identity as the ArabeskTV app. */
 (function () {
 'use strict';
 
@@ -63,7 +63,7 @@ const playUrl = (kind, id, ext) =>
   `/play/${S.acc.s}/${kind}/${encodeURIComponent(S.acc.u)}/${encodeURIComponent(S.acc.p)}/${id}.${ext || 'm3u8'}`;
 
 /* ---------------- shared bits ---------------- */
-const logoHTML = (sm) => `<div class="logo"><img src="icon-192.png" alt=""><div><div class="w">ARAB <b>SAT</b></div>${sm ? '' : '<div class="ar">عرب سات</div>'}</div></div>`;
+const logoHTML = (sm) => `<div class="logo"><img src="icon-192.png" alt=""><div><div class="w">ARABESK <b>TV</b></div>${sm ? '' : '<div class="ar">أرابيسك تي في</div>'}</div></div>`;
 function bar(title, opts) {
   opts = opts || {};
   return `<div class="bar"><button class="ibtn" data-back>${I.back}</button><h1 dir="auto">${esc(title)}</h1>
@@ -125,7 +125,7 @@ const AR = {
   'Waiting for Face ID...': 'مستني بصمة الوش...', 'Install the app first': 'نزّل التطبيق الأول', 'Choose a channel': 'اختار قناة',
   'This channel is not available right now.': 'القناة دي مش متاحة دلوقتي.', 'Try another channel.': 'جرّب قناة تانية.',
   'This account is already watching on another device.': 'الحساب ده شغال على جهاز تاني دلوقتي.', 'Tap to play': 'دوس للتشغيل',
-  'Please contact customer service.': 'كلّم خدمة العملاء.', 'Cannot reach Arab Sat. Check your internet.': 'مش قادر يوصل لـ Arab Sat. اتأكد من النت.',
+  'Please contact customer service.': 'كلّم خدمة العملاء.', 'Cannot reach Arabesk TV. Check your internet.': 'مش قادر يوصل لـ Arabesk TV. اتأكد من النت.',
   'Movie': 'فيلم', 'Episode': 'حلقة', 'Stopped at': 'وقفت عند', 'of': 'من', 'No episodes yet': 'لسه مفيش حلقات', 'No episodes': 'مفيش حلقات',
 };
 const AR_RX = [
@@ -213,17 +213,17 @@ let pollT = null;
 async function renderLogin(err) {
   clearTimeout(pollT);
   if (isIOS && !standalone) {
-    app.innerHTML = `<div class="login"><div class="card"><div class="big"><img src="icon-512.png" alt=""><div class="w">ARAB <b>SAT</b></div><div class="ar">عرب سات</div></div>
+    app.innerHTML = `<div class="login"><div class="card"><div class="big"><img src="icon-512.png" alt=""><div class="w">ARABESK <b>TV</b></div><div class="ar">أرابيسك تي في</div></div>
       <div class="howto"><b>Install the app first</b><ol>
         <li>Tap the <b>Share</b> button <span class="shr">⬆︎</span> at the bottom of Safari</li>
         <li>Choose <b>Add to Home Screen</b></li>
-        <li>Open <b>Arab Sat</b> from your home screen to get your activation code</li></ol>
-        <div class="ar2" dir="rtl">نزّل التطبيق الأول: دوس على زرار المشاركة ⬆︎ تحت في Safari، واختار <b>Add to Home Screen</b>، وافتح Arab Sat من الشاشة الرئيسية علشان يظهرلك كود التفعيل.</div></div>
+        <li>Open <b>Arabesk TV</b> from your home screen to get your activation code</li></ol>
+        <div class="ar2" dir="rtl">نزّل التطبيق الأول: دوس على زرار المشاركة ⬆︎ تحت في Safari، واختار <b>Add to Home Screen</b>، وافتح Arabesk TV من الشاشة الرئيسية علشان يظهرلك كود التفعيل.</div></div>
     </div>${supportHTML()}</div>`;
     return;
   }
   if (!device()) return renderGetCode(err);
-  app.innerHTML = `<div class="login"><div class="card"><div class="big"><img src="icon-512.png" alt=""><div class="w">ARAB <b>SAT</b></div><div class="ar">عرب سات</div></div>
+  app.innerHTML = `<div class="login"><div class="card"><div class="big"><img src="icon-512.png" alt=""><div class="w">ARABESK <b>TV</b></div><div class="ar">أرابيسك تي في</div></div>
     <div class="codebox"><div class="lbl">Your activation code</div><div class="code" id="dc">${spinner()}</div>
       <div class="hint">Send this code to Arabesk customer service to activate your app.</div>
       <div class="hint" dir="rtl">ابعت الكود ده لخدمة عملاء Arabesk علشان يتفعّل التطبيق.</div>
@@ -233,7 +233,7 @@ async function renderLogin(err) {
   const d = device();
   $('#dc').textContent = fmtCode(d.code);
   const wa = $('.support a[href^="https://wa.me"]');
-  if (wa) wa.href = `https://wa.me/${SUPPORT.wa}?text=${encodeURIComponent('Arab Sat activation code: ' + d.code)}`;
+  if (wa) wa.href = `https://wa.me/${SUPPORT.wa}?text=${encodeURIComponent('Arabesk TV activation code: ' + d.code)}`;
   const poll = async () => {
     if (!$('#dc')) return;
     try {
@@ -253,7 +253,7 @@ async function renderLogin(err) {
 // first launch: get a code tied to a Face ID / passcode key, so it never changes
 async function renderGetCode(err) {
   clearTimeout(pollT);
-  app.innerHTML = `<div class="login"><div class="card"><div class="big"><img src="icon-512.png" alt=""><div class="w">ARAB <b>SAT</b></div><div class="ar">عرب سات</div></div>
+  app.innerHTML = `<div class="login"><div class="card"><div class="big"><img src="icon-512.png" alt=""><div class="w">ARABESK <b>TV</b></div><div class="ar">أرابيسك تي في</div></div>
     <div class="codebox">
       <div class="hint" style="font-size:15px;color:var(--text)">Tap the button and confirm with <b>Face ID</b> or your <b>phone passcode</b> to get your activation code.</div>
       <div class="hint" dir="rtl" style="font-size:15px">دوس على الزرار وأكّد ببصمة الوش أو الرقم السري بتاع الموبايل علشان تاخد كود التفعيل.</div>
@@ -265,7 +265,7 @@ async function renderGetCode(err) {
   try {
     cfg = await (await fetch('/api/config')).json();
     if (cfg.rp) sid = (await (await fetch('/api/sess/new')).json()).s;
-  } catch (e) { $('#le').textContent = 'Cannot reach Arab Sat. Check your internet.'; pollT = setTimeout(() => renderGetCode(), 5000); return; }
+  } catch (e) { $('#le').textContent = 'Cannot reach Arabesk TV. Check your internet.'; pollT = setTimeout(() => renderGetCode(), 5000); return; }
   btn.disabled = false;
   const poll = async () => {
     if (!$('#gk')) return;
@@ -278,7 +278,7 @@ async function renderGetCode(err) {
   };
   btn.onclick = async () => {
     $('#le').textContent = '';
-    if (!cfg.rp) { try { await ensureDevice(); renderLogin(); } catch (e) { $('#le').textContent = 'Cannot reach Arab Sat. Check your internet.'; } return; }
+    if (!cfg.rp) { try { await ensureDevice(); renderLogin(); } catch (e) { $('#le').textContent = 'Cannot reach Arabesk TV. Check your internet.'; } return; }
     // opened straight from the tap so the phone allows it
     const url = 'https://' + cfg.rp + '/key.html?s=' + encodeURIComponent(sid);
     const w = window.open(url, '_blank');
@@ -560,7 +560,7 @@ function renderHome() {
   const card = (key, title, sub, go, icon) => `<button class="tile hcard hc-${key}" data-go="${go}" data-nav="${key}" data-rb>
       <span class="hc-tab"></span><span class="hc-t">${title}</span><span class="hc-scene">${icon}</span></button>`;
   app.innerHTML = `<div class="home home2 home3"><div class="hbg" id="hbg"></div>
-    <div class="htop"><div class="hlogo"><img src="icon-192.png" alt=""><div><div class="w">ARAB <b>SAT</b></div><div class="ar">عرب سات</div></div></div>
+    <div class="htop"><div class="hlogo"><img src="icon-192.png" alt=""><div><div class="w">ARABESK <b>TV</b></div><div class="ar">أرابيسك تي في</div></div></div>
       <div class="hact"><button class="ibtn" data-go="#/search" data-nav="srch" data-rb>${I.search}</button><button class="ibtn" id="rf" data-nav="rf" data-rb>${I.refresh}</button><button class="ibtn" id="st" data-nav="st" data-rb>${I.gear}</button></div></div>
     <div class="h3wrap"><div class="h3grid">
       ${card('live', 'Live TV', 'Channels', '#/live', SCN.live)}
@@ -916,7 +916,7 @@ async function playLive(v, c, msg) {
   const mmsOk = !!(window.ManagedMediaSource || window.MediaSource);
   const direct = location.origin + playUrl('live', c.stream_id, 'ts');
   const viaUs = location.origin + playUrl('live', c.stream_id, 'ts').replace('/play/', '/px/');
-  // 1) straight from the IPTV server (fastest)  2) through Arab Sat's server (for phones that can't open it)  3) Safari HLS
+  // 1) straight from the IPTV server (fastest)  2) through Arabesk TV's server (for phones that can't open it)  3) Safari HLS
   const tries = [];
   if (mmsOk) { if (!S.needProxy) tries.push(['direct', direct]); tries.push(['proxy', viaUs]); }
   const errs = [];
@@ -1437,6 +1437,16 @@ document.addEventListener('mousedown', () => document.body.classList.remove('kbd
 
 route();
 translateNode(document.body);
+(function splash() {   // opening animation: logo bounces in, then the screen opens like two doors onto the home screen
+  const sp = document.getElementById('splash'); if (!sp) return;
+  let done = false;
+  const out = () => { if (done) return; done = true; sp.classList.add('out');
+    setTimeout(() => { sp.remove(); document.body.classList.remove('splashing');
+      $$('.home3 .h3wrap *, .home3 .htop').forEach(el => { if (getComputedStyle(el).animationName !== 'none') { el.style.animation = 'none'; void el.offsetWidth; el.style.animation = ''; } }); }, 900); };
+  document.body.classList.add('splashing');
+  sp.addEventListener('click', out);
+  setTimeout(out, 2700);
+})();
 syncActivation();
 document.addEventListener('visibilitychange', () => { if (!document.hidden) syncActivation(); });
 })();

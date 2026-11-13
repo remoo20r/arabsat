@@ -3,13 +3,13 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<title>Arab Sat - Activation key</title>
+<title>Arabesk TV - Activation key</title>
 <link rel="stylesheet" href="style.css?v=3">
 <link rel="apple-touch-icon" href="icon-180.png">
 </head>
 <body>
 <div class="login"><div class="card">
-  <div class="big"><img src="icon-512.png" alt=""><div class="w">ARAB <b>SAT</b></div><div class="ar">عرب سات</div></div>
+  <div class="big"><img src="icon-512.png" alt=""><div class="w">ARABESK <b>TV</b></div><div class="ar">أرابيسك تي في</div></div>
   <div id="box"><div class="loading"><div class="spin"></div></div></div>
   <div class="err" id="er"></div>
 </div></div>
@@ -33,8 +33,8 @@ async function options() {
 function done(code, restored) {
   box.innerHTML = `<div class="codebox"><div style="font-size:54px">✅</div>
     <div class="lbl">${restored ? 'Your code is back' : 'Your activation code'}</div><div class="code">${String(code).replace(/^(\d{3})(\d{3})$/, '$1 $2')}</div>
-    <div class="hint"><b>Go back to the Arab Sat app.</b> You can close this page.</div>
-    <div class="hint" dir="rtl"><b>ارجع لتطبيق Arab Sat</b>، وتقدر تقفل الصفحة دي.</div></div>`;
+    <div class="hint"><b>Go back to the Arabesk TV app.</b> You can close this page.</div>
+    <div class="hint" dir="rtl"><b>ارجع لتطبيق Arabesk TV</b>، وتقدر تقفل الصفحة دي.</div></div>`;
   setTimeout(() => { try { window.close(); } catch (e) {} }, 1500);
 }
 function fail(msg) { er.textContent = msg; }
@@ -45,8 +45,8 @@ async function createKey() {
   try {
     const o = await options();
     const cred = await navigator.credentials.create({ publicKey: {
-      challenge: unb64u(o.challenge), rp: { id: o.rp, name: 'Arab Sat' },
-      user: { id: unb64u(o.uid), name: 'Arab Sat', displayName: 'Arab Sat' },
+      challenge: unb64u(o.challenge), rp: { id: o.rp, name: 'Arabesk TV' },
+      user: { id: unb64u(o.uid), name: 'Arabesk TV', displayName: 'Arabesk TV' },
       pubKeyCredParams: [{ type: 'public-key', alg: -7 }, { type: 'public-key', alg: -257 }],
       authenticatorSelection: { residentKey: 'required', requireResidentKey: true, userVerification: 'required' },
       attestation: 'none', timeout: 120000 } });
@@ -65,22 +65,22 @@ async function restoreKey() {
     const r = cred.response;
     const j = await post('/api/pk/get', { id: cred.id, clientDataJSON: b64u(r.clientDataJSON), authenticatorData: b64u(r.authenticatorData), signature: b64u(r.signature) });
     if (j.ok) done(j.code, true);
-    else if (j.error === 'nokey') fail('No old Arab Sat key found. Use the first button to get a new code.');
+    else if (j.error === 'nokey') fail('No old Arabesk TV key found. Use the first button to get a new code.');
     else fail('Something went wrong, try again.');
-  } catch (e) { fail('No old Arab Sat key found on this phone. Use the first button to get a new code.'); }
+  } catch (e) { fail('No old Arabesk TV key found on this phone. Use the first button to get a new code.'); }
 }
 async function noKey() {
   const j = await post('/api/pk/none', {});
   if (j.ok) done(j.code, false); else fail('This page expired. Go back to the app and tap the button again.');
 }
 
-if (!sid) { box.innerHTML = '<div class="empty">Open this page from the Arab Sat app.</div>'; return; }
+if (!sid) { box.innerHTML = '<div class="empty">Open this page from the Arabesk TV app.</div>'; return; }
 if (!supported) { box.innerHTML = '<div class="loading"><div class="spin"></div></div>'; noKey(); return; }
 box.innerHTML = `<div class="codebox">
   <div class="hint" style="font-size:15px;color:var(--text)">Confirm with <b>Face ID</b> or your <b>phone passcode</b> to get your activation code. Your code stays the same even if you delete the app or change your phone.</div>
   <div class="hint" dir="rtl" style="font-size:15px">أكّد ببصمة الوش أو الرقم السري بتاع الموبايل علشان تاخد كود التفعيل. الكود هيفضل ثابت حتى لو مسحت التطبيق أو غيّرت الموبايل.</div>
   <button class="btn red" id="cr" style="margin-top:16px">Get my code · خد الكود</button>
-  <button class="btn ghost" id="rs" style="margin-top:10px;font-size:15px">I had Arab Sat before · كان عندي قبل كده</button></div>`;
+  <button class="btn ghost" id="rs" style="margin-top:10px;font-size:15px">I had Arabesk TV before · كان عندي قبل كده</button></div>`;
 $('#cr').onclick = createKey;
 $('#rs').onclick = restoreKey;
 })();
