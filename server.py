@@ -134,6 +134,13 @@ def pk_save(d):
 SESS = {}
 SESS_TTL = 15 * 60
 GEO = {}
+import collections
+LOGS = collections.deque(maxlen=300)
+
+
+def logline(**kw):
+    kw['t'] = time.strftime('%H:%M:%S')
+    LOGS.append(kw)
 
 
 def sess_get(sid):
@@ -279,6 +286,8 @@ class Handler(SimpleHTTPRequestHandler):
                 return self.check_code(url.query)
             if url.path.startswith("/play/"):
                 return self.play(url.path)
+            if url.path.startswith("/px/"):
+                return self.proxy_stream(url.path)
         except ValueError:
             return self.send_json({"error": "bad request"}, 400)
         except Exception as e:  # noqa
@@ -428,6 +437,19 @@ class Handler(SimpleHTTPRequestHandler):
         url = urllib.parse.urlsplit(self.path)
         if url.path == "/api/diag":
             return self.diag()
+        if url.path == "/api/clientlog":
+            try:
+                body = self.read_body()
+            except Exception:
+                body = {}
+            ip = (self.headers.get("X-Forwarded-For") or self.client_address[0]).split(",")[0].strip()
+            logline(ev="client", msg=str(body.get("msg", ""))[:300], ip=ip, ua=(self.headers.get("User-Agent") or "")[:120])
+            return self.send_json({"ok": True})
+        if url.path == "/api/logs":
+            key = activate_key()
+            if not key or not hmac.compare_digest(self.headers.get("X-Key", ""), key):
+                return self.send_json({"error": "not found"}, 404)
+            return self.send_json({"logs": list(LOGS)})
         if url.path.startswith("/api/pk/"):
             return self.pk_post(url.path)
         if url.path != "/api/activate":
@@ -516,6 +538,45 @@ class Handler(SimpleHTTPRequestHandler):
         if key and len(data) > 2:
             cache_put(key, data)
         return self.send_json(None, raw=data)
+
+    def proxy_stream(self, path):
+        """Streams a live channel through this server (used when a phone can't open the stream directly)."""
+        parts = path.split("/")
+        if len(parts) != 7 or parts[3] not in ("live", "movie", "series"):
+            raise ValueError("bad path")
+        _, _, s, kind, u, p, fname = parts
+        host = self.server_host(s)
+        target = "%s/%s/%s/%s/%s" % (host, kind, u, p, fname)
+        ua = self.headers.get("User-Agent") or UA
+        hdr = {"User-Agent": ua}
+        if self.headers.get("Range"):
+            hdr["Range"] = self.headers["Range"]
+        ip = (self.headers.get("X-Forwarded-For") or self.client_address[0]).split(",")[0].strip()
+        try:
+            r = urllib.request.urlopen(urllib.request.Request(target, headers=hdr), timeout=20)
+        except urllib.error.HTTPError as e:
+            logline(ev="proxy", s=s, f=fname, status=e.code, ip=ip, ua=ua[:80])
+            return self.send_json({"error": "upstream %d" % e.code}, e.code if e.code in (401, 403, 404, 429, 509) else 502)
+        except Exception as e:
+            logline(ev="proxy", s=s, f=fname, status="ERR " + repr(e)[:80], ip=ip, ua=ua[:80])
+            return self.send_json({"error": "Server not reachable"}, 504)
+        logline(ev="proxy", s=s, f=fname, status=r.status, ip=ip, ua=ua[:80])
+        self.send_response(r.status)
+        for h in ("Content-Type", "Content-Length", "Content-Range", "Accept-Ranges"):
+            if r.headers.get(h):
+                self.send_header(h, r.headers[h])
+        self.send_header("Cache-Control", "no-store")
+        self.end_headers()
+        try:
+            while True:
+                chunk = r.read(64 * 1024)
+                if not chunk:
+                    break
+                self.wfile.write(chunk)
+        except Exception:
+            pass
+        finally:
+            r.close()
 
     def play(self, path):
         # /play/<s>/<type>/<u>/<p>/<file>

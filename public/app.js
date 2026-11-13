@@ -96,6 +96,64 @@ function fmtTime(sec) {
 function b64(s) { try { return decodeURIComponent(escape(atob(s || ''))); } catch (e) { return s || ''; } }
 const img = (u) => (u && /^https?:\/\//.test(u)) ? u : '';
 
+/* ---------------- settings: theme + language ---------------- */
+function prefs() { return store.get('prefs', { theme: 'dark', lang: 'en' }); }
+function setPref(k, v) { const p = prefs(); p[k] = v; store.set('prefs', p); applyPrefs(); if (k === 'lang') { untranslate(); route(); } }
+function applyPrefs() {
+  const p = prefs();
+  document.body.classList.toggle('light', p.theme === 'light');
+  document.documentElement.lang = p.lang === 'ar' ? 'ar' : 'en';
+  document.body.classList.toggle('ar', p.lang === 'ar');
+  const m = document.querySelector('meta[name=theme-color]'); if (m) m.content = p.theme === 'light' ? '#F6F1EC' : '#17060A';
+}
+const AR = {
+  'Live TV': 'البث المباشر', 'Movies': 'الأفلام', 'Series': 'المسلسلات', 'New Releases': 'الجديد', 'Latest movies & series': 'أحدث الأفلام والمسلسلات',
+  'Continue Watching': 'كمّل المشاهدة', 'Categories': 'الأقسام', 'Search in categories': 'دوّر في الأقسام', 'Search': 'بحث', 'NEW': 'جديد',
+  'Active until': 'الاشتراك لحد', 'Unlimited': 'غير محدود', 'My Account': 'حسابي', 'Activation code': 'كود التفعيل', 'Username': 'اليوزرنيم',
+  'Server': 'السيرفر', 'Status': 'الحالة', 'Expires': 'ينتهي', 'Connections': 'الأجهزة', 'Settings': 'الإعدادات', 'Appearance': 'الشكل',
+  'Language': 'اللغة', '🌙 Dark': '🌙 داكن', '☀️ Light': '☀️ فاتح', 'Clear watch history': 'امسح سجل المشاهدة', 'Call': 'اتصال', 'WhatsApp': 'واتساب',
+  'Active': 'شغال', 'Expired': 'منتهي', 'Banned': 'موقوف', 'Disabled': 'متوقف', 'LIVE': 'مباشر', 'Program guide': 'جدول البرامج',
+  'No program info': 'مفيش بيانات للبرنامج', 'No program guide for this channel': 'مفيش جدول برامج للقناة دي', 'No channels here': 'مفيش قنوات هنا',
+  'Nothing here yet': 'لسه مفيش حاجة هنا', 'No categories': 'مفيش أقسام', '★ Favorites': '★ المفضلة', 'Play': 'تشغيل', 'Watch again': 'شاهد تاني',
+  'Start from the beginning': 'ابدأ من الأول', '✓ Watched': '✓ اتشاف', 'Last watched': 'آخر حاجة اتشافت', 'Next episode': 'الحلقة اللي بعدها',
+  'Season': 'الموسم', 'Cast:': 'الممثلين:', 'Director:': 'الإخراج:', 'Channels': 'القنوات', 'New Movies': 'أفلام جديدة', 'New Series': 'مسلسلات جديدة',
+  'Channels, movies, series...': 'قنوات، أفلام، مسلسلات...', 'Type to search': 'اكتب علشان تدوّر', 'Type at least 2 letters': 'اكتب حرفين على الأقل',
+  'No results': 'مفيش نتايج', 'Loading the full list...': 'بيحمّل القايمة كلها...', 'Added to favorites': 'اتضافت للمفضلة', 'Removed from favorites': 'اتشالت من المفضلة',
+  'Lists refreshed': 'القوايم اتحدّثت', 'Watch history cleared': 'سجل المشاهدة اتمسح', 'Sorted A to Z': 'مترتبة أبجدياً', 'Original order': 'الترتيب الأصلي',
+  'Your activation code': 'كود التفعيل بتاعك', 'Waiting for activation...': 'مستني التفعيل...', 'Get my code · خد الكود': 'خد الكود',
+  'Send this code to Arabesk customer service to activate your app.': 'ابعت الكود ده لخدمة عملاء Arabesk علشان يتفعّل التطبيق.',
+  'Waiting for Face ID...': 'مستني بصمة الوش...', 'Install the app first': 'نزّل التطبيق الأول', 'Choose a channel': 'اختار قناة',
+  'This channel is not available right now.': 'القناة دي مش متاحة دلوقتي.', 'Try another channel.': 'جرّب قناة تانية.',
+  'This account is already watching on another device.': 'الحساب ده شغال على جهاز تاني دلوقتي.', 'Tap to play': 'دوس للتشغيل',
+  'Please contact customer service.': 'كلّم خدمة العملاء.', 'Cannot reach Arab Sat. Check your internet.': 'مش قادر يوصل لـ Arab Sat. اتأكد من النت.',
+  'Movie': 'فيلم', 'Episode': 'حلقة', 'Stopped at': 'وقفت عند', 'of': 'من', 'No episodes yet': 'لسه مفيش حلقات', 'No episodes': 'مفيش حلقات',
+};
+const AR_RX = [
+  [/^Continue watching from (.+)$/, 'كمّل من $1'], [/^Continue · (.+) left$/, 'كمّل · فاضل $1'], [/^Continue S(\d+) E(\d+)$/, 'كمّل م$1 ح$2'],
+  [/^Play S(\d+) E(\d+)$/, 'شغّل م$1 ح$2'], [/^Season (\d+)$/, 'الموسم $1'], [/^● In progress · (.+) left$/, '● شغال فيها · فاضل $1'],
+  [/^(\d+) seasons?$/, '$1 موسم'], [/^Now: (.+)$/, 'دلوقتي: $1'], [/^Resuming from (.+)$/, 'بيكمّل من $1'], [/^\+(\d+)s$/, '+$1ث'], [/^-(\d+)s$/, '-$1ث'],
+];
+function trText(t) {
+  const k = t.trim(); if (!k) return null;
+  if (AR[k]) return t.replace(k, AR[k]);
+  for (const [rx, rep] of AR_RX) if (rx.test(k)) return t.replace(k, k.replace(rx, rep));
+  return null;
+}
+const ORIG = new WeakMap();
+function translateNode(root) {
+  if (prefs().lang !== 'ar' || !root) return;
+  const w = document.createTreeWalker(root, NodeFilter.SHOW_TEXT, null);
+  const list = []; let n; while ((n = w.nextNode())) list.push(n);
+  list.forEach(tn => { if (tn.parentElement && tn.parentElement.closest('[data-notr],script,style')) return; const r = trText(tn.nodeValue); if (r != null && r !== tn.nodeValue) { if (!ORIG.has(tn)) ORIG.set(tn, tn.nodeValue); tn.nodeValue = r; } });
+  if (root.querySelectorAll) root.querySelectorAll('[placeholder]').forEach(el => { const r = trText(el.getAttribute('placeholder')); if (r) el.setAttribute('placeholder', r); });
+}
+function untranslate() { /* a fresh render puts the English back */ }
+const trObs = new MutationObserver((muts) => { if (prefs().lang !== 'ar') return; trObs.disconnect();
+  muts.forEach(m => { if (m.type === 'characterData') translateNode(m.target.parentNode); else m.addedNodes.forEach(nd => { if (nd.nodeType === 1) translateNode(nd); else if (nd.nodeType === 3 && nd.parentNode) translateNode(nd.parentNode); }); });
+  trObs.observe(document.body, { childList: true, subtree: true, characterData: true }); });
+trObs.observe(document.body, { childList: true, subtree: true, characterData: true });
+applyPrefs();
+
 /* ---------------- router ---------------- */
 let cleanup = [];
 function onLeave(fn) { cleanup.push(fn); }
@@ -293,8 +351,7 @@ function renderHome() {
   const exp = ui.exp_date ? new Date(ui.exp_date * 1000) : null;
   const cw = continueList();
   const card = (key, title, sub, go, icon) => `<button class="tile hcard hc-${key}" data-go="${go}">
-      <span class="hc-tab"></span><span class="hc-t">${title}</span><span class="hc-c" id="cnt-${key}">${sub}</span>
-      <span class="hc-u">${HI.upd}<em id="upd-${key}">Updating…</em></span><span class="hc-i">${icon}</span></button>`;
+      <span class="hc-tab"></span><span class="hc-t">${title}</span><span class="hc-i">${icon}</span></button>`;
   app.innerHTML = `<div class="home home2"><div class="hbg" id="hbg"></div>
     <div class="htop"><div class="hlogo"><img src="icon-192.png" alt=""><div><div class="w">ARAB <b>SAT</b></div><div class="ar">عرب سات</div></div></div>
       <div class="hact"><button class="ibtn" data-go="#/search">${I.search}</button><button class="ibtn" id="rf">${I.refresh}</button><button class="ibtn" id="st">${I.gear}</button></div></div>
@@ -303,11 +360,14 @@ function renderHome() {
       ${card('movies', 'Movies', 'Movies', '#/movies', HI.movies)}
       ${card('series', 'Series', 'Series', '#/series', HI.series)}
     </div>
+    <div class="hnew"><button class="tile hcard hc-new" data-go="#/new"><span class="hc-tab"></span>
+      <span class="hn-badge">NEW</span><span class="hn-t">New Releases</span><span class="hn-s">Latest movies &amp; series</span>
+      <span class="hn-i"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2l2.4 6.3L21 9l-5 4.6L17.5 21 12 17.3 6.5 21 8 13.6 3 9l6.6-.7z"/></svg></span></button></div>
     ${cw.length ? `<div class="section-t">Continue Watching</div><div class="hrow">${cw.map(c => `
       <button class="cw" data-cw="${esc(c.id)}"><div class="im" style="background-image:url('${esc(img(c.img))}')"><div class="prog" style="width:${Math.min(100, c.t / c.d * 100)}%"></div></div>
       <div class="n" dir="auto">${esc(c.title)}</div></button>`).join('')}</div>` : ''}
     <div class="hbot">
-      <div class="hb-l"><button class="newbtn" data-go="#/new">NEW</button><div class="hexp">${exp ? `Active until <b>${exp.toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' })}</b>` : (ui.username ? '<b>Unlimited</b>' : '')}<a href="tel:${SUPPORT.tel}">${I.phone}${SUPPORT.show}</a></div></div>
+      <div class="hb-l"><div class="hexp">${exp ? `Active until <b>${exp.toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' })}</b>` : (ui.username ? '<b>Unlimited</b>' : '')}<a href="tel:${SUPPORT.tel}">${I.phone}${SUPPORT.show}</a></div></div>
       <div class="hb-c"><div class="t" id="ck"></div><div class="d" id="cd"></div></div>
       <div class="hb-r" id="hwx"></div>
     </div></div>`;
@@ -320,14 +380,10 @@ function renderHome() {
   $$('[data-cw]').forEach(b => b.onclick = () => resumeItem(cw.find(c => String(c.id) === b.dataset.cw)));
   loadWeather();
   // counts + a blurred movie poster behind everything
-  const fmt = (n) => n >= 1000 ? '+' + (Math.floor(n / 100) * 100).toLocaleString() : String(n);
-  const setC = (k, arr, word) => { const el = $('#cnt-' + k); if (el && Array.isArray(arr)) { el.textContent = fmt(arr.length) + ' ' + word; $('#upd-' + k).textContent = 'Updated just now'; } };
-  cached('all_l', { action: 'get_live_streams' }).then(a => setC('live', a, 'Channels')).catch(() => {});
-  cached('all_v', { action: 'get_vod_streams' }).then(a => { setC('movies', a, 'Movies');
+  cached('all_v', { action: 'get_vod_streams' }).then(a => {
     const withPic = a.filter(x => img(x.stream_icon)).slice(0, 60); const pick = withPic[Math.floor(Math.random() * withPic.length)];
     if (pick && $('#hbg')) { const im = new Image(); im.onload = () => { const b = $('#hbg'); if (b) { b.style.backgroundImage = `url('${img(pick.stream_icon)}')`; b.classList.add('on'); } }; im.src = img(pick.stream_icon); }
   }).catch(() => {});
-  cached('all_s', { action: 'get_series' }).then(a => setC('series', a, 'Series')).catch(() => {});
   cached('lc', { action: 'get_live_categories' }).catch(() => {});
   if (window.ManagedMediaSource || window.MediaSource) loadMpegts().catch(() => {});
   setTimeout(() => { if (!document.activeElement || document.activeElement === document.body) { const f = $('.hcard'); if (f && document.body.classList.contains('kbd')) f.focus(); } }, 300);
@@ -362,11 +418,18 @@ function openSettings() {
     <div class="kv"><span>Status</span><b class="${ui.status === 'Active' ? 'ok' : ''}">${esc(ui.status || '-')}</b></div>
     <div class="kv"><span>Expires</span><b>${esc(exp)}</b></div>
     <div class="kv"><span>Connections</span><b>${esc((ui.active_cons || 0) + ' / ' + (ui.max_connections || '-'))}</b></div>
+    <h3 style="margin-top:20px">Settings</h3>
+    <div class="setrow"><span>Appearance</span><div class="seg2" id="segTheme">
+      <button data-v="dark" class="${prefs().theme !== 'light' ? 'on' : ''}">🌙 Dark</button><button data-v="light" class="${prefs().theme === 'light' ? 'on' : ''}">☀️ Light</button></div></div>
+    <div class="setrow"><span>Language</span><div class="seg2" id="segLang">
+      <button data-v="en" class="${prefs().lang !== 'ar' ? 'on' : ''}">English</button><button data-v="ar" class="${prefs().lang === 'ar' ? 'on' : ''}">العربية</button></div></div>
     <div style="height:16px"></div>
     <button class="btn ghost" id="clr">Clear watch history</button>
     ${supportHTML()}</div>`;
   document.body.appendChild(bg);
   bg.onclick = (e) => { if (e.target === bg) bg.remove(); };
+  $$('#segTheme button', bg).forEach(b => b.onclick = () => { setPref('theme', b.dataset.v); $$('#segTheme button', bg).forEach(x => x.classList.toggle('on', x === b)); });
+  $$('#segLang button', bg).forEach(b => b.onclick = () => { setPref('lang', b.dataset.v); $$('#segLang button', bg).forEach(x => x.classList.toggle('on', x === b)); });
   $('#clr', bg).onclick = () => { store.del('prog_' + acckey()); bg.remove(); toast('Watch history cleared'); route(); };
 }
 
@@ -507,7 +570,7 @@ async function renderLive(catId) {
       ${withStar ? `<button class="star ${isFav('live', c.stream_id) ? 'on' : ''}" data-f="${i}" tabindex="-1">${isFav('live', c.stream_id) ? I.star : I.starO}</button>` : ''}</div>`;
   function renderRows(el, arr, from, compact) {
     if (from === 0) el.innerHTML = '';
-    el.insertAdjacentHTML('beforeend', arr.slice(from, from + 200).map((c, k) => el.id === 'll' ? cardHTML(c, from + k) : rowHTML(c, from + k, !compact)).join(''));
+    el.insertAdjacentHTML('beforeend', arr.slice(from, from + 200).map((c, k) => el.id === 'll' && isWide() ? cardHTML(c, from + k) : rowHTML(c, from + k, !compact)).join(''));
     if (el.id === 'll') { epgMain(); } else epgTv();
     if (from + 200 < arr.length) setTimeout(() => { if (el.isConnected) renderRows(el, arr, from + 200, compact); }, 60);
   }
@@ -522,7 +585,8 @@ async function renderLive(catId) {
     const r = e.target.closest('.chc,.row'); if (!r) return;
     const c = list[+r.dataset.i];
     if (current && current.stream_id == c.stream_id) { enterTV(); return; }
-    playList = list; play(c); enterTV();
+    playList = list; play(c);
+    if (isWide()) enterTV();   // computer: full screen right away; phone: plays on top of the list (as before)
   };
   // sort: original order or A to Z
   let sortAZ = store.get('liveSort', false);
@@ -562,6 +626,7 @@ async function renderLive(catId) {
     video.play().catch(() => {});
   }
   function exitTV() { lbx.classList.remove('tv', 'panel'); document.body.classList.remove('tvon'); clearTimeout(hideT);
+    if (!isWide()) { video.play().catch(() => {}); return; }   // phone: back to the player on top of the list
     stopVideo(video); lbx.classList.add('hidden'); const was = current; current = null; markOn();
     const el = was && $$('#ll .chc').find(x => list[+x.dataset.i] && list[+x.dataset.i].stream_id == was.stream_id); if (el) { el.classList.add('on'); el.focus({ preventScroll: false }); } }
   function drawTvCats() {
@@ -625,29 +690,36 @@ async function playLive(v, c, msg) {
   v.onplaying = () => show('');
   const failMsg = (code) => explainFail(show, code);
   const mmsOk = !!(window.ManagedMediaSource || window.MediaSource);
-  if (mmsOk && tsOk(S.acc.s)) {
+  const direct = location.origin + playUrl('live', c.stream_id, 'ts');
+  const viaUs = location.origin + playUrl('live', c.stream_id, 'ts').replace('/play/', '/px/');
+  // 1) straight from the IPTV server (fastest)  2) through Arab Sat's server (for phones that can't open it)  3) Safari HLS
+  const tries = [];
+  if (mmsOk) { if (!S.needProxy) tries.push(['direct', direct]); tries.push(['proxy', viaUs]); }
+  const errs = [];
+  const next = async () => {
+    if (token !== S.playTok) return;
+    const t = tries.shift();
+    if (!t) { S.lastTsErr = errs.join(' / '); playHls(v, c, msg, token, failMsg); return; }
     try {
       await loadMpegts();
       if (token !== S.playTok) return;
-      if (window.mpegts && mpegts.getFeatureList().mseLivePlayback) {
-        v.disableRemotePlayback = true;
-        const p = mpegts.createPlayer({ type: 'mpegts', isLive: true, url: location.origin + playUrl('live', c.stream_id, 'ts') }, {
-          enableWorker: false, enableStashBuffer: true, stashInitialSize: 384 * 1024, lazyLoad: false,
-          liveBufferLatencyChasing: false, liveSync: true, liveSyncMaxLatency: 14, liveSyncTargetLatency: 6, liveSyncPlaybackRate: 1.1,
-          autoCleanupSourceBuffer: true, autoCleanupMaxBackwardDuration: 60, autoCleanupMinBackwardDuration: 30 });
-        S.ts = p; let started = false;
-        p.attachMediaElement(v); p.load();
-        v.onplaying = () => { started = true; show(''); tsMark(S.acc.s, true); };
-        v.onwaiting = () => show('<div class="spin"></div>');
-        const fallback = (why) => { if (token !== S.playTok) return; S.lastTsErr = why || 'ts-timeout'; playHls(v, c, msg, token, failMsg); };
-        p.on(mpegts.Events.ERROR, (type, detail, info) => { if (token !== S.playTok) return; if (started && type === mpegts.ErrorTypes.MEDIA_ERROR) return; fallback('ts:' + detail + (info && info.code ? ':' + info.code : '')); });
-        const pr = v.play(); if (pr && pr.catch) pr.catch((err) => { if (err && err.name === 'NotAllowedError') tapToPlay(v, msg); });
-        setTimeout(() => { if (token === S.playTok && !started && S.ts === p) fallback(); }, 7000);
-        return;
-      }
-    } catch (e) {}
-  }
-  playHls(v, c, msg, token, failMsg);
+      if (!(window.mpegts && mpegts.getFeatureList().mseLivePlayback)) { errs.push('no-mse'); return playHls(v, c, msg, token, failMsg); }
+      stopVideo(v); v.disableRemotePlayback = true;
+      const p = mpegts.createPlayer({ type: 'mpegts', isLive: true, url: t[1] }, {
+        enableWorker: false, enableStashBuffer: true, stashInitialSize: 384 * 1024, lazyLoad: false,
+        liveBufferLatencyChasing: false, liveSync: true, liveSyncMaxLatency: 14, liveSyncTargetLatency: 6, liveSyncPlaybackRate: 1.1,
+        autoCleanupSourceBuffer: true, autoCleanupMaxBackwardDuration: 60, autoCleanupMinBackwardDuration: 30 });
+      S.ts = p; let started = false, failed = false;
+      p.attachMediaElement(v); p.load();
+      v.onplaying = () => { started = true; show(''); if (t[0] === 'proxy' && errs.length) S.needProxy = true; };
+      v.onwaiting = () => show('<div class="spin"></div>');
+      const fail = (why) => { if (failed || token !== S.playTok) return; failed = true; errs.push(t[0] + ':' + why); next(); };
+      p.on(mpegts.Events.ERROR, (type, detail, info) => { if (started && type === mpegts.ErrorTypes.MEDIA_ERROR) return; fail(detail + (info && info.code ? ':' + info.code : '')); });
+      const pr = v.play(); if (pr && pr.catch) pr.catch((err) => { if (err && err.name === 'NotAllowedError') tapToPlay(v, msg); });
+      setTimeout(() => { if (token === S.playTok && !started && S.ts === p) fail('timeout'); }, 7000);
+    } catch (e) { errs.push(t[0] + ':load'); next(); }
+  };
+  next();
 }
 function diagLine(code) {
   const v = document.createElement('video');
@@ -656,6 +728,7 @@ function diagLine(code) {
     'HLS ' + (v.canPlayType('application/vnd.apple.mpegurl') || 'no'), standalone ? 'app' : 'browser'].filter(Boolean).join(' · ');
 }
 async function explainFail(show, code) {
+  try { fetch('/api/clientlog', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ msg: diagLine(code) + ' · s' + (S.acc && S.acc.s) }) }); } catch (e) {}
   show('This channel is not available right now.<br>Try another channel.' + `<small class="ecode">${esc(diagLine(code))}</small>`);
   try {
     const j = await api({}); const u = (j && j.user_info) || {};
@@ -1063,6 +1136,7 @@ document.addEventListener('keydown', (e) => {
 document.addEventListener('mousedown', () => document.body.classList.remove('kbd'));
 
 route();
+translateNode(document.body);
 syncActivation();
 document.addEventListener('visibilitychange', () => { if (!document.hidden) syncActivation(); });
 })();

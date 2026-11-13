@@ -590,3 +590,79 @@ html,body{height:100%;overflow:hidden}
 }
 .chgrid{grid-auto-rows:max-content}
 .chc>*{flex-shrink:0}
+
+/* =================== settings controls =================== */
+.setrow{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:10px 2px;border-bottom:1px solid var(--divider)}
+.setrow>span{color:var(--muted);font-size:15px}
+.seg2{display:flex;background:rgba(0,0,0,.35);border:1px solid var(--border);border-radius:12px;padding:3px;gap:3px}
+.seg2 button{height:36px;padding:0 14px;border-radius:9px;font-weight:700;font-size:14px;color:var(--muted)}
+.seg2 button.on{background:linear-gradient(135deg,#E0223A,#8E121F);color:#fff;box-shadow:0 2px 10px rgba(211,36,54,.4)}
+
+/* =================== home: NEW card under the main cards =================== */
+.hnew{display:flex;justify-content:center;padding:0 calc(28px + var(--sr)) 14px calc(28px + var(--sl))}
+.tile.hcard.hc-new{max-width:none;width:min(100%,1244px);height:74px;display:flex;align-items:center;gap:16px;padding:0 26px;animation-delay:.24s}
+.hc-new .hn-badge{background:linear-gradient(135deg,var(--gold),var(--goldL));color:#1a0d05;font-weight:900;font-size:13px;letter-spacing:1.5px;padding:6px 11px;border-radius:9px;box-shadow:0 4px 14px rgba(212,175,55,.35)}
+.hc-new .hn-t{font-size:20px;font-weight:800;color:#fff}
+.hc-new .hn-s{color:var(--muted);font-size:14px;font-weight:600}
+.hc-new .hn-i{margin-left:auto;width:30px;height:30px;color:var(--goldL);transition:transform .4s}
+.hc-new .hn-i svg{width:100%;height:100%;max-width:none;filter:none;animation:none}
+.tile.hcard.hc-new:hover,.tile.hcard.hc-new:focus-visible{transform:translateY(-6px) scale(1.02)}
+.tile.hcard.hc-new:hover .hn-i,.tile.hcard.hc-new:focus-visible .hn-i{transform:rotate(72deg) scale(1.2)}
+.hcard .hc-t{position:absolute;left:26px;top:26px}
+@media (min-width:761px){.tile.hcard{height:210px}}
+@media (max-width:899px){
+  .hnew{padding:0 16px 8px}
+  .tile.hcard.hc-new{height:58px;padding:0 18px;gap:12px}
+  .hc-new .hn-t{font-size:17px}.hc-new .hn-s{display:none}
+  .hcard .hc-t{left:20px;top:50%;transform:translateY(-50%)}
+}
+
+/* =================== LIGHT theme =================== */
+body.light{--bg:#F6F1EC;--surface:#FFFFFF;--elev:#FFFFFF;--text:#1F1416;--muted:#6E6264;--silver:#3B3133;--silverL:#1F1416;--silverD:#8E8385;
+  --border:rgba(80,30,35,.16);--divider:rgba(80,30,35,.12);--goldL:#A87F12;color:var(--text);
+  background:radial-gradient(1100px 600px at 10% -10%,rgba(211,36,54,.12),transparent 60%),radial-gradient(900px 500px at 110% 10%,rgba(212,175,55,.14),transparent 60%),linear-gradient(180deg,#FBF7F3,#EFE7E1) fixed}
+body.light .bar{background:linear-gradient(180deg,rgba(255,255,255,.96),rgba(250,246,242,.92));border-bottom-color:rgba(168,127,18,.25)}
+body.light .ibtn,body.light .catbtn{background:linear-gradient(135deg,#FFFFFF,#F1EAE4);border-color:rgba(80,30,35,.2);color:#3B3133;box-shadow:0 3px 8px rgba(80,30,35,.12)}
+body.light .side{background:rgba(255,255,255,.96)}
+@media (min-width:900px){body.light .side{background:rgba(255,255,255,.7)}}
+body.light .catsearch{background:#fff;border-color:rgba(168,127,18,.35)}
+body.light .cat{color:#3B3133}
+body.light .cat.on{color:#fff}
+body.light .chc,body.light .pc,body.light .ep,body.light .cw{background:#fff;border-color:rgba(80,30,35,.1);box-shadow:0 6px 18px rgba(80,30,35,.1)}
+body.light .chc .chl{background:radial-gradient(circle at 50% 40%,#F4EEE9,#E9E0D9 70%)}
+body.light .chc .chn{background:rgba(255,255,255,.9);color:#8a6510}
+body.light .pc .po{background-color:#EEE6E0}
+body.light .row{color:var(--text)}
+body.light .sheet{background:#FFFFFF;border-color:rgba(80,30,35,.15)}
+body.light .input{background:#fff;color:var(--text)}
+body.light .seg2{background:#F1EAE4}
+body.light .login .card{background:rgba(255,255,255,.92)}
+body.light .codebox .code{background:#FBF7F3;color:#1F1416}
+body.light .home2::before{background:radial-gradient(900px 500px at 20% 0%,rgba(211,36,54,.14),transparent 60%),radial-gradient(700px 420px at 100% 100%,rgba(212,175,55,.16),transparent 60%),linear-gradient(180deg,rgba(255,255,255,.5),rgba(240,232,226,.85))}
+body.light .hbg{filter:blur(34px) brightness(1.15) saturate(.9);opacity:.25}
+body.light .tile.hcard{background:linear-gradient(140deg,rgba(255,255,255,.92),rgba(255,255,255,.7));border-color:rgba(80,30,35,.12);box-shadow:0 18px 40px rgba(80,30,35,.15)}
+body.light .hcard .hc-t,body.light .hc-new .hn-t{color:#1F1416}
+body.light .hcard .hc-i{color:#8a6510;filter:none}
+body.light .tile.hcard:hover,body.light .tile.hcard:focus-visible{background:linear-gradient(140deg,#fff,#FFF4F2);border-color:var(--gold)}
+body.light .tile.hcard:hover .hc-i,body.light .tile.hcard:focus-visible .hc-i{color:var(--red)}
+body.light .hbot{background:linear-gradient(180deg,transparent,rgba(255,255,255,.7))}
+body.light .hact .ibtn{background:rgba(255,255,255,.8)}
+body.light .chips{background:linear-gradient(180deg,rgba(255,255,255,.95),rgba(250,246,242,.9))}
+body.light .chip{background:#fff;color:var(--muted)}
+body.light .chip.on{color:#fff}
+body.light .hero::after{background:linear-gradient(180deg,rgba(246,241,236,.2) 0%,rgba(246,241,236,.8) 55%,#F6F1EC 100%)}
+body.light .meta span{background:#fff}
+body.light .toast{background:#fff;color:var(--text)}
+/* video areas always stay dark */
+body.light .livebox.tv,body.light .fp,body.light .vwrap{--text:#F2F4F7;--muted:#A9B0BA;--silver:#CBD1D9;--silverL:#EDF1F6;--silverD:#868D97;--goldL:#F3D98B;color:#F2F4F7}
+body.light .livebox.tv .row,body.light .livebox.tv .cat{color:#EDF1F6}
+
+/* ===== phone Live TV = the earlier layout: player on top, channel list below (cards only on big screens) ===== */
+@media (max-width:899px){
+  .secmain.live3{display:flex!important;flex-direction:column;height:100%;overflow:hidden}
+  .secmain.live3 .livecol{display:contents!important}
+  .secmain.live3 .livebox:not(.hidden){display:block!important;order:-1;flex:none}
+  .secmain.live3 .livebox.tv{display:block!important}
+  .chgrid{display:block;flex:1 1 auto;min-height:0;overflow-y:auto;padding:4px 10px 30px;grid-template-columns:none}
+  .chgrid .row{margin-bottom:4px}
+}
