@@ -1446,13 +1446,15 @@ translateNode(document.body);
 (function splash() {   // opening animation: logo bounces in, then the screen opens like two doors onto the home screen
   const sp = document.getElementById('splash'); if (!sp) return;
   let done = false;
-  const out = () => { if (done) return; done = true; sp.classList.add('out');
+  const out = () => { if (done) return; done = true; sp.classList.remove('open1'); sp.classList.add('closing', 'out');
     setTimeout(() => $$('.home3 .h3wrap *, .home3 .htop').forEach(el => { if (getComputedStyle(el).animationName !== 'none') { el.style.animation = 'none'; void el.offsetWidth; el.style.animation = ''; } }), 380);
     setTimeout(() => sp.classList.add('gone'), 1500);
     setTimeout(() => { sp.remove(); document.body.classList.remove('splashing'); }, 1850); };
   document.body.classList.add('splashing');
   sp.addEventListener('click', out);
-  setTimeout(out, 3200);
+  setTimeout(() => { if (!done) sp.classList.add('open1'); }, 150);                                  // curtains open on the black screen
+  setTimeout(() => { if (!done) { sp.classList.remove('open1'); sp.classList.add('closing'); } }, 4100); // curtains close
+  setTimeout(out, 5000);                                                                              // and open on the home screen
 })();
 syncActivation();
 document.addEventListener('visibilitychange', () => { if (!document.hidden) syncActivation(); });

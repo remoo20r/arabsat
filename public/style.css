@@ -1179,3 +1179,20 @@ body.kbd #catq:focus{outline:none}
 #splash.gone{opacity:0;transition:opacity .35s}
 #splash.out{background:transparent;transition:background .2s .35s}
 #splash.out .sp-st{opacity:0!important;animation:none;transition:opacity .3s}
+/* ---- opening v3: curtains open on a black cinema screen -> logo zooms in with lights -> curtains close -> open on home ---- */
+#splash .sp-cur{z-index:7}#splash .sp-val{z-index:8}
+#splash .sp-screen{position:absolute;left:8%;right:8%;top:calc(max(8vh,54px) + 4vh);bottom:9vh;z-index:2;border-radius:6px;background:#000;
+  box-shadow:0 0 0 3px #1a1a1a,0 0 0 5px rgba(212,175,55,.35),0 0 60px rgba(255,255,255,.06) inset}
+#splash .sp-logo{animation:spgrow 2.1s 1.05s cubic-bezier(.22,.8,.3,1) both,spglow2 1.4s 3.15s ease-in-out infinite alternate}
+#splash .sp-shine{animation-delay:3s}
+#splash .sp-name{animation-delay:2.6s}
+#splash .sp-spot{animation-delay:1.5s}
+#splash .sp-floor{animation-delay:1.3s}
+#splash .b1,#splash .b4{animation-delay:1.15s}#splash .b2,#splash .b3{animation-delay:1.35s}
+#splash .st1{animation-delay:2.3s}#splash .st2{animation-delay:2.6s}#splash .st3{animation-delay:2.9s}#splash .st4{animation-delay:3.2s}
+#splash.open1 .sp-cur.l{transform:translateX(-62%) scaleX(.38);transition-delay:0s}
+#splash.open1 .sp-cur.r{transform:translateX(62%) scaleX(.38);transition-delay:0s}
+#splash.closing .sp-cur{transition:transform .85s cubic-bezier(.6,0,.35,1)}
+#splash.closing .sp-beam,#splash.closing .sp-floor,#splash.closing .sp-st{transition:opacity .5s;opacity:0!important;animation-play-state:paused}
+#splash.out .sp-c,#splash.out .sp-screen{opacity:0;transition:none}
+#splash.out .sp-cur.l,#splash.out .sp-cur.r{transition:transform 1.15s cubic-bezier(.65,0,.3,1);transition-delay:.1s}
