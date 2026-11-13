@@ -55,9 +55,21 @@ async function api(params, acc) {
 async function cached(key, params) {
   const k = acckey() + '|' + key;
   if (S.mem[k]) return S.mem[k];
-  const p = api(params).then(v => (Array.isArray(v) ? v : (v && typeof v === 'object' ? v : [])));
+  let p = api(params).then(v => (Array.isArray(v) ? v : (v && typeof v === 'object' ? v : [])));
+  if (isLGApp() && /^get_live_(categories|streams)$/.test(params.action)) p = p.then(v => lgFilterLive(params.action, v));
   S.mem[k] = p; p.catch(() => delete S.mem[k]);
   return p;
+}
+/* LG TV app: these channel groups are not offered on LG TVs at all (categories and channels whose names match) */
+const LG_BLOCK = /\b(osn|be\s?in|mbc|shahid|rotana|ssc|alkass|al\s?kass|ad\s?sports?|abu\s?dhabi\s?sports?|dubai\s?sports?|starz|tod|art\s?(aflam|hekayat|cinema|movies))\b|بي\s?ان|ام\s?بي\s?سي|روتانا|شاهد|اوربت|أوربت/i;
+function isLGApp() { return !!store.get('tvid', null) || /Web0S|webOS/i.test(navigator.userAgent); }
+async function lgFilterLive(action, v) {
+  if (!Array.isArray(v)) return v;
+  if (action === 'get_live_categories') return v.filter(c => !LG_BLOCK.test(String(c.category_name || '')));
+  let cats = [];
+  try { cats = await api({ action: 'get_live_categories' }); } catch (e) {}
+  const bad = new Set((Array.isArray(cats) ? cats : []).filter(c => LG_BLOCK.test(String(c.category_name || ''))).map(c => String(c.category_id)));
+  return v.filter(c => !bad.has(String(c.category_id)) && !LG_BLOCK.test(String(c.name || '')));
 }
 const playUrl = (kind, id, ext) =>
   `/play/${S.acc.s}/${kind}/${encodeURIComponent(S.acc.u)}/${encodeURIComponent(S.acc.p)}/${id}.${ext || 'm3u8'}`;
@@ -807,7 +819,7 @@ async function renderLive(catId) {
     if ($('#cats')) side.setCounts(cnt);
   }).catch(() => {});
 
-  const getList = async (cid) => cid === 'fav' ? favs('live').map(f => f.raw) : cached('ls_' + cid, { action: 'get_live_streams', category_id: cid });
+  const getList = async (cid) => cid === 'fav' ? favs('live').map(f => f.raw).filter(c => !isLGApp() || !LG_BLOCK.test(String(c.name || ''))) : cached('ls_' + cid, { action: 'get_live_streams', category_id: cid });
   async function loadCat(cid) {
     store.set('lastLiveCat_' + acckey(), cid);
     $('#ll').innerHTML = spinner();
