@@ -813,3 +813,15 @@ body.light .h3clock .d{color:#6b5558}
 @media (max-width:899px){.home3 .hcard .hc-i{width:auto;height:min(64px,calc(100% - 18px));aspect-ratio:1;top:50%;bottom:auto;transform:translateY(-50%);margin-top:0}}
 .h3new .hn-badge{background:linear-gradient(135deg,#F3D98B,#D4AF37 55%,#A8831F);color:#1a0e05;font-weight:900;box-shadow:0 6px 18px rgba(212,175,55,.45)}
 @media (max-width:899px){.home3 .h3info{grid-column:1 / -1}}
+/* call / WhatsApp: well apart; on the phone they are labeled pills */
+.hc-btn em{display:none;font-style:normal}
+.h3sup .hcontact{gap:16px}
+@media (max-width:899px){
+  .h3sup{flex-wrap:wrap;row-gap:8px}
+  .h3sup .hcontact{flex-basis:100%;display:grid;grid-template-columns:1fr 1fr;gap:16px;padding:2px 2px 4px}
+  .h3sup .hc-btn{width:auto;height:40px;border-radius:999px;display:flex;align-items:center;justify-content:center;gap:8px;font-weight:800;font-size:14px}
+  .h3sup .hc-btn em{display:inline;position:relative;z-index:1}
+  .h3sup .hc-btn svg{width:17px;height:17px}
+  .h3sup .hc-btn::before,.h3sup .hc-btn::after{border-radius:999px;animation-name:ringpill}
+}
+@keyframes ringpill{0%{transform:scale(1);opacity:.7}100%{transform:scale(1.12,1.5);opacity:0}}

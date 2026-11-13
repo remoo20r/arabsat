@@ -560,11 +560,15 @@ class Handler(SimpleHTTPRequestHandler):
         except Exception as e:
             logline(ev="proxy", s=s, f=fname, status="ERR " + repr(e)[:80], ip=ip, ua=ua[:80])
             return self.send_json({"error": "Server not reachable"}, 504)
-        logline(ev="proxy", s=s, f=fname, status=r.status, ip=ip, ua=ua[:80])
+        if kind == "live" or not self.headers.get("Range") or self.headers.get("Range", "").startswith("bytes=0-"):
+            logline(ev="proxy", s=s, f=fname, status=r.status, ip=ip, ua=ua[:80])
         self.send_response(r.status)
-        for h in ("Content-Type", "Content-Length", "Content-Range", "Accept-Ranges"):
+        for h in ("Content-Type", "Content-Length", "Content-Range"):
             if r.headers.get(h):
                 self.send_header(h, r.headers[h])
+        # many IPTV panels send "Accept-Ranges: 0-<size>" which iPhone Safari rejects; always send the standard value
+        if kind != "live" and (r.status == 206 or r.headers.get("Accept-Ranges") or r.headers.get("Content-Length")):
+            self.send_header("Accept-Ranges", "bytes")
         self.send_header("Cache-Control", "no-store")
         self.end_headers()
         try:

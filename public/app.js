@@ -109,7 +109,7 @@ function applyPrefs() {
 const AR = {
   'Live TV': 'البث المباشر', 'Movies': 'الأفلام', 'Series': 'المسلسلات', 'New Releases': 'الجديد', 'Latest movies & series': 'أحدث الأفلام والمسلسلات',
   'Continue Watching': 'كمّل المشاهدة', 'Categories': 'الأقسام', 'Search in categories': 'دوّر في الأقسام', 'Search': 'بحث', 'NEW': 'جديد',
-  'Active until': 'الاشتراك لحد', 'Expiration Date': 'تاريخ انتهاء الاشتراك', 'Customer Service': 'خدمة العملاء', 'Clear sky': 'السما صافية', 'Partly cloudy': 'غيوم خفيفة', 'Cloudy': 'غايم', 'Foggy': 'شبورة', 'Rainy': 'مطر', 'Snowy': 'تلج', 'Thunderstorm': 'عاصفة رعدية', 'Weather': 'الطقس', 'Locating…': 'بنحدد مكانك…', 'Unlimited': 'غير محدود', 'My Account': 'حسابي', 'Activation code': 'كود التفعيل', 'Username': 'اليوزرنيم',
+  'Active until': 'الاشتراك لحد', 'Expiration Date': 'تاريخ انتهاء الاشتراك', 'Customer Service': 'خدمة العملاء', 'Call': 'اتصال', 'WhatsApp': 'واتساب', 'Clear sky': 'السما صافية', 'Partly cloudy': 'غيوم خفيفة', 'Cloudy': 'غايم', 'Foggy': 'شبورة', 'Rainy': 'مطر', 'Snowy': 'تلج', 'Thunderstorm': 'عاصفة رعدية', 'Weather': 'الطقس', 'Locating…': 'بنحدد مكانك…', 'Unlimited': 'غير محدود', 'My Account': 'حسابي', 'Activation code': 'كود التفعيل', 'Username': 'اليوزرنيم',
   'Server': 'السيرفر', 'Status': 'الحالة', 'Expires': 'ينتهي', 'Connections': 'الأجهزة', 'Settings': 'الإعدادات', 'Appearance': 'الشكل',
   'Language': 'اللغة', '🌙 Dark': '🌙 داكن', '☀️ Light': '☀️ فاتح', 'Clear watch history': 'امسح سجل المشاهدة', 'Call': 'اتصال', 'WhatsApp': 'واتساب',
   'Active': 'شغال', 'Expired': 'منتهي', 'Banned': 'موقوف', 'Disabled': 'متوقف', 'LIVE': 'مباشر', 'Program guide': 'جدول البرامج',
@@ -370,8 +370,8 @@ function renderHome() {
       <div class="h3info">
         <div class="h3row h3exp"><span class="h3ico">${CAL}</span><span class="h3lab">Expiration Date</span><b>${exp ? exp.toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' }) : (ui.username ? 'Unlimited' : '-')}</b></div>
         <div class="h3row h3sup"><span class="h3ico">${I.phone}</span><span class="h3lab">Customer Service<br><b class="hc-num">${SUPPORT.show}</b></span>
-          <span class="hcontact"><a class="hc-btn hc-call" href="tel:${SUPPORT.tel}" aria-label="Call">${I.phone}</a>
-          <a class="hc-btn hc-wa" href="https://wa.me/${SUPPORT.wa}" target="_blank" rel="noopener" aria-label="WhatsApp">${I.wa}</a></span></div>
+          <span class="hcontact"><a class="hc-btn hc-call" href="tel:${SUPPORT.tel}" aria-label="Call">${I.phone}<em>Call</em></a>
+          <a class="hc-btn hc-wa" href="https://wa.me/${SUPPORT.wa}" target="_blank" rel="noopener" aria-label="WhatsApp">${I.wa}<em>WhatsApp</em></a></span></div>
       </div>
     </div>
     ${cw.length ? `<div class="h3cw"><div class="section-t">Continue Watching</div><div class="hrow">${cw.map(c => `
@@ -775,10 +775,24 @@ async function loadVideo(v, url, o) {
   show('<div class="spin"></div>');
   v.oncanplay = v.onplaying = () => show('');
   v.onwaiting = () => show('<div class="spin"></div>');
-  v.onerror = () => show('This video can\'t play here.<br>The format may not be supported on this device.');
-  v.src = url;
-  if (o.start) v.addEventListener('loadedmetadata', () => { try { v.currentTime = o.start; } catch (e) {} }, { once: true });
-  v.play().catch(() => {});
+  // iPhone/iPad: the IPTV servers send a broken "Accept-Ranges" header that Safari refuses,
+  // so movies/episodes go through our server (which fixes it). Other browsers go direct and
+  // only fall back to our server if the direct link fails.
+  const viaProxy = (u) => u.startsWith('/play/') ? '/px/' + u.slice(6) : u;
+  let cur = isIOS ? viaProxy(url) : url, startAt = o.start || 0;
+  const go = () => {
+    v.src = cur;
+    if (startAt) v.addEventListener('loadedmetadata', () => { try { v.currentTime = startAt; } catch (e) {} }, { once: true });
+    v.play().catch(() => {});
+  };
+  v.onerror = () => {
+    const alt = viaProxy(cur);
+    if (alt !== cur) { startAt = v.currentTime || startAt; cur = alt; go(); return; }
+    const err = v.error ? v.error.code : '?';
+    try { fetch('/api/clientlog', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ msg: 'vod fail ' + err + ' · ' + url.split('/').pop() + ' · ' + (isIOS ? 'ios' : 'other') }) }); } catch (e) {}
+    show('This video can\'t play here.<br>The format may not be supported on this device.');
+  };
+  go();
 }
 function goFull(v) {
   try {
