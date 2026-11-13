@@ -216,3 +216,14 @@ img{display:block}
   .foot{flex-wrap:wrap;justify-content:space-between}
   .foot .clock{order:-1;width:100%;margin-bottom:10px}
 }
+.codebox{text-align:center;padding:4px 0 2px}
+.codebox .lbl{color:var(--muted);font-weight:700;font-size:14px;letter-spacing:.5px;text-transform:uppercase}
+.codebox .code{font-size:46px;font-weight:900;letter-spacing:6px;margin:10px 0 14px;font-variant-numeric:tabular-nums;color:var(--silverL);
+  background:#0B0B0D;border:1.4px solid rgba(211,36,54,.6);border-radius:18px;padding:12px 0;box-shadow:0 0 30px rgba(211,36,54,.2) inset;min-height:84px;display:flex;align-items:center;justify-content:center}
+.codebox .code .loading{padding:0}
+.codebox .hint{color:var(--muted);font-size:14px;line-height:1.5;margin:4px 0}
+.codebox .wait{display:flex;align-items:center;justify-content:center;gap:10px;margin-top:16px;color:var(--silver);font-weight:700;font-size:14px}
+.howto{font-size:15px;line-height:1.55}
+.howto ol{padding-left:22px;margin:10px 0 14px}.howto li{margin-bottom:6px}
+.howto .shr{display:inline-block;padding:0 6px;border:1px solid var(--border);border-radius:6px}
+.howto .ar2{color:var(--muted);font-size:14px;border-top:1px solid var(--divider);padding-top:12px}

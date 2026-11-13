@@ -10,7 +10,9 @@ Server hosts live in servers.json next to this file (not in git):
   [{"name": "Bella TV", "host": "http://example.com:8080"}, ...]
 """
 import gzip
+import hmac
 import json
+import secrets
 import os
 import sys
 import threading
@@ -23,6 +25,9 @@ from http.server import SimpleHTTPRequestHandler, ThreadingHTTPServer
 ROOT = os.path.dirname(os.path.abspath(__file__))
 PUBLIC = os.path.join(ROOT, "public")
 PORT = int(os.environ.get("PORT", "80"))
+BIND = os.environ.get("BIND", "0.0.0.0")
+ACT_FILE = os.path.join(ROOT, "activations.json")
+KEY_FILE = os.path.join(ROOT, "activate.key")
 UA = "IPTVSmartersPro"
 CACHE_TTL = 15 * 60
 CACHE_MAX = 120
@@ -51,6 +56,43 @@ def cache_put(key, body):
             for k in oldest:
                 _cache.pop(k, None)
         _cache[key] = (time.time(), body)
+
+
+_act_lock = threading.Lock()
+
+
+def act_load():
+    try:
+        with open(ACT_FILE, encoding="utf-8") as f:
+            return json.load(f)
+    except Exception:
+        return {}
+
+
+def act_save(d):
+    tmp = ACT_FILE + ".tmp"
+    with open(tmp, "w", encoding="utf-8") as f:
+        json.dump(d, f)
+    os.replace(tmp, ACT_FILE)
+
+
+def activate_key():
+    try:
+        return open(KEY_FILE).read().strip()
+    except Exception:
+        return ""
+
+
+def xtream_login(host, user, pw):
+    q = urllib.parse.urlencode({"username": user, "password": pw})
+    req = urllib.request.Request(host + "/player_api.php?" + q, headers={"User-Agent": UA})
+    with urllib.request.urlopen(req, timeout=30) as r:
+        data = r.read()
+        if r.headers.get("Content-Encoding") == "gzip":
+            data = gzip.decompress(data)
+    j = json.loads(data or b"null") or {}
+    ui = j.get("user_info") or {}
+    return str(ui.get("auth")) == "1", ui
 
 
 CACHEABLE = {
@@ -105,6 +147,10 @@ class Handler(SimpleHTTPRequestHandler):
                 return self.send_json([{"id": i, "name": s["name"]} for i, s in enumerate(load_servers())])
             if url.path == "/api/p":
                 return self.api_proxy(url.query)
+            if url.path == "/api/newcode":
+                return self.new_code()
+            if url.path == "/api/code":
+                return self.check_code(url.query)
             if url.path.startswith("/play/"):
                 return self.play(url.path)
         except ValueError:
@@ -115,6 +161,70 @@ class Handler(SimpleHTTPRequestHandler):
         if url.path == "/":
             self.path = "/index.html"
         return super().do_GET()
+
+    # ---------- device activation ----------
+    def new_code(self):
+        with _act_lock:
+            d = act_load()
+            for _ in range(50):
+                code = "%06d" % secrets.randbelow(1000000)
+                if code not in d and code[0] != "0":
+                    break
+            sec = secrets.token_urlsafe(18)
+            d[code] = {"sec": sec, "ts": int(time.time())}
+            # forget codes that were never activated after 30 days
+            old = [k for k, v in d.items() if not v.get("u") and time.time() - v.get("ts", 0) > 30 * 86400]
+            for k in old:
+                d.pop(k, None)
+            act_save(d)
+        return self.send_json({"code": code, "sec": sec})
+
+    def check_code(self, query):
+        q = dict(urllib.parse.parse_qsl(query))
+        rec = act_load().get(q.get("c", ""))
+        if not rec or not hmac.compare_digest(rec.get("sec", ""), q.get("k", "")):
+            return self.send_json({"unknown": True})
+        if not rec.get("u"):
+            return self.send_json({"pending": True})
+        servers = load_servers()
+        s = int(rec["s"])
+        return self.send_json({"s": s, "u": rec["u"], "p": rec["p"],
+                               "name": servers[s]["name"] if s < len(servers) else "", "v": rec.get("at", 0)})
+
+    def do_POST(self):
+        url = urllib.parse.urlsplit(self.path)
+        if url.path != "/api/activate":
+            return self.send_json({"error": "not found"}, 404)
+        key = activate_key()
+        if not key or not hmac.compare_digest(self.headers.get("X-Key", ""), key):
+            return self.send_json({"error": "not found"}, 404)
+        try:
+            body = json.loads(self.rfile.read(int(self.headers.get("Content-Length", "0") or 0)) or b"{}")
+            code = str(body.get("code", "")).replace(" ", "").strip()
+            s, user, pw = int(body.get("s", -1)), str(body.get("u", "")).strip(), str(body.get("p", "")).strip()
+            host = self.server_host(s)
+        except Exception:
+            return self.send_json({"ok": False, "error": "bad request"}, 400)
+        with _act_lock:
+            if code not in act_load():
+                return self.send_json({"ok": False, "error": "code"})
+        if not user or not pw:
+            return self.send_json({"ok": False, "error": "login"})
+        try:
+            good, ui = xtream_login(host, user, pw)
+        except Exception:
+            return self.send_json({"ok": False, "error": "server"})
+        if not good:
+            return self.send_json({"ok": False, "error": "login"})
+        with _act_lock:
+            d = act_load()
+            rec = d.get(code)
+            if not rec:
+                return self.send_json({"ok": False, "error": "code"})
+            rec.update({"s": s, "u": user, "p": pw, "at": int(time.time())})
+            act_save(d)
+        return self.send_json({"ok": True, "server": load_servers()[s]["name"], "status": ui.get("status"),
+                               "exp_date": ui.get("exp_date")})
 
     def api_proxy(self, query):
         q = dict(urllib.parse.parse_qsl(query, keep_blank_values=True))
@@ -169,6 +279,6 @@ class Handler(SimpleHTTPRequestHandler):
 
 if __name__ == "__main__":
     ThreadingHTTPServer.daemon_threads = True
-    httpd = ThreadingHTTPServer(("0.0.0.0", PORT), Handler)
+    httpd = ThreadingHTTPServer((BIND, PORT), Handler)
     print("Arab Sat on port %d" % PORT, flush=True)
     httpd.serve_forever()

@@ -17,8 +17,8 @@ Wants=network-online.target
 [Service]
 User=arabsat
 WorkingDirectory=/opt/arabsat
-Environment=PORT=80
-AmbientCapabilities=CAP_NET_BIND_SERVICE
+Environment=PORT=8090
+Environment=BIND=127.0.0.1
 ExecStart=/usr/bin/python3 /opt/arabsat/server.py
 Restart=always
 RestartSec=3
@@ -52,6 +52,17 @@ OnUnitActiveSec=5min
 [Install]
 WantedBy=timers.target
 UNIT
+# activation key shared with the Arabesk TV Telegram bot (derived from its token)
+if [ ! -s /opt/arabsat/activate.key ] && [ -f /opt/arabesk/config.json ]; then
+  python3 -c 'import json,hashlib;t=json.load(open("/opt/arabesk/config.json"))["bot_token"];print(hashlib.sha256((t+":arabsat").encode()).hexdigest())' > /opt/arabsat/activate.key
+  chown arabsat:arabsat /opt/arabsat/activate.key; chmod 600 /opt/arabsat/activate.key
+fi
+# web address through Caddy (plain http: IPTV streams are http, an https page would block them)
+if [ -f /etc/caddy/Caddyfile ] && ! grep -q arabsat /etc/caddy/Caddyfile; then
+  IP=$(curl -s -H "Metadata-Flavor: Google" http://metadata.google.internal/computeMetadata/v1/instance/network-interfaces/0/access-configs/0/external-ip | tr . -)
+  printf '\nhttp://arabsat.%s.sslip.io, http://tv.%s.sslip.io {\n  encode gzip\n  reverse_proxy 127.0.0.1:8090\n}\n' "$IP" "$IP" >> /etc/caddy/Caddyfile
+  systemctl reload caddy
+fi
 systemctl daemon-reload
 systemctl enable --now arabsat arabsat-update.timer
-sleep 2; systemctl is-active arabsat && echo ARABSAT_OK
+sleep 2; systemctl is-active arabsat && curl -s 127.0.0.1:8090/api/servers && echo && echo ARABSAT_OK

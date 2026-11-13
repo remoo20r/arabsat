@@ -2,7 +2,7 @@
 (function () {
 'use strict';
 
-const SUPPORT = { show: '+1 (682) 597-5255', tel: '+16825975255', wa: '16825975255' };
+const SUPPORT = { show: '+1 (818) 813-8151', tel: '+18188138151', wa: '18188138151' };
 const PAGE = 60;
 
 /* ---------------- icons ---------------- */
@@ -124,45 +124,93 @@ document.addEventListener('click', (e) => {
 });
 S.navCount = 0; window.addEventListener('hashchange', () => { S.navCount++; });
 
-/* ---------------- login ---------------- */
+/* ---------------- device activation (no manual login) ---------------- */
+const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+const standalone = window.navigator.standalone === true || (window.matchMedia && matchMedia('(display-mode: standalone)').matches);
+function device() { return store.get('dev', null); }
+async function ensureDevice() {
+  let d = device();
+  if (d && d.code && d.sec) return d;
+  const r = await fetch('/api/newcode'); d = await r.json();
+  if (!d.code) throw new Error('no code');
+  store.set('dev', d); return d;
+}
+async function checkActivation() {
+  const d = device(); if (!d) return null;
+  const r = await fetch('/api/code?c=' + encodeURIComponent(d.code) + '&k=' + encodeURIComponent(d.sec));
+  const j = await r.json();
+  if (j.unknown) { store.del('dev'); return 'unknown'; }
+  if (j.pending) return 'pending';
+  return j;
+}
+function applyActivation(j) {
+  const changed = !S.acc || S.acc.s !== j.s || S.acc.u !== j.u || S.acc.p !== j.p;
+  if (changed) { S.mem = {}; S.acc = { s: j.s, u: j.u, p: j.p, name: j.name, info: (S.acc && !changed) ? S.acc.info : null }; }
+  else S.acc.name = j.name;
+  store.set('acc', S.acc);
+  return changed;
+}
+const fmtCode = (c) => String(c).replace(/^(\d{3})(\d{3})$/, '$1 $2');
+let pollT = null;
 async function renderLogin(err) {
-  let sel = store.get('lastServer', 0);
-  app.innerHTML = `<div class="login"><div class="card">
-    <div class="big"><img src="icon-512.png" alt=""><div class="w">ARAB <b>SAT</b></div><div class="ar">عرب سات</div></div>
-    <form id="lf" autocomplete="on">
-      <div class="field"><label>Server</label><div class="servers" id="srvs">${spinner()}</div></div>
-      <div class="field"><label>Username</label><input class="input" id="lu" autocapitalize="off" autocorrect="off" spellcheck="false" autocomplete="username" value="${esc(store.get('lastUser', ''))}"></div>
-      <div class="field"><label>Password</label><div class="pw"><input class="input" id="lp" type="password" autocapitalize="off" autocorrect="off" autocomplete="current-password"><button type="button" class="eye" id="eye">${I.eye}</button></div></div>
-      <button class="btn red" id="lb" type="submit">Login</button>
-      <div class="err" id="le">${esc(err || '')}</div>
-    </form></div>${supportHTML()}</div>`;
-  $('#eye').onclick = () => { const p = $('#lp'); p.type = p.type === 'password' ? 'text' : 'password'; };
-  try {
-    if (!S.servers.length) S.servers = await (await fetch('/api/servers')).json();
-  } catch (e) { $('#le').textContent = 'Cannot reach Arab Sat. Check your internet.'; }
-  if (sel >= S.servers.length) sel = 0;
-  const box = $('#srvs');
-  box.innerHTML = S.servers.map(s => `<button type="button" class="srv ${s.id === sel ? 'on' : ''}" data-s="${s.id}">${esc(s.name)}</button>`).join('');
-  $$('.srv', box).forEach(b => b.onclick = () => { sel = +b.dataset.s; $$('.srv', box).forEach(x => x.classList.toggle('on', x === b)); });
-  $('#lf').onsubmit = async (e) => {
-    e.preventDefault();
-    const u = $('#lu').value.trim(), p = $('#lp').value.trim();
-    if (!u || !p) { $('#le').textContent = 'Enter username and password'; return; }
-    const btn = $('#lb'); btn.disabled = true; btn.innerHTML = '<div class="spin" style="width:24px;height:24px"></div>'; $('#le').textContent = '';
-    const acc = { s: sel, u, p, name: (S.servers[sel] || {}).name || '' };
+  clearTimeout(pollT);
+  if (isIOS && !standalone) {
+    app.innerHTML = `<div class="login"><div class="card"><div class="big"><img src="icon-512.png" alt=""><div class="w">ARAB <b>SAT</b></div><div class="ar">عرب سات</div></div>
+      <div class="howto"><b>Install the app first</b><ol>
+        <li>Tap the <b>Share</b> button <span class="shr">⬆︎</span> at the bottom of Safari</li>
+        <li>Choose <b>Add to Home Screen</b></li>
+        <li>Open <b>Arab Sat</b> from your home screen to get your activation code</li></ol>
+        <div class="ar2" dir="rtl">نزّل التطبيق الأول: دوس على زرار المشاركة ⬆︎ تحت في Safari، واختار <b>Add to Home Screen</b>، وافتح Arab Sat من الشاشة الرئيسية علشان يظهرلك كود التفعيل.</div></div>
+    </div>${supportHTML()}</div>`;
+    return;
+  }
+  app.innerHTML = `<div class="login"><div class="card"><div class="big"><img src="icon-512.png" alt=""><div class="w">ARAB <b>SAT</b></div><div class="ar">عرب سات</div></div>
+    <div class="codebox"><div class="lbl">Your activation code</div><div class="code" id="dc">${spinner()}</div>
+      <div class="hint">Send this code to Arabesk customer service to activate your app.</div>
+      <div class="hint" dir="rtl">ابعت الكود ده لخدمة عملاء Arabesk علشان يتفعّل التطبيق.</div>
+      <div class="wait"><div class="spin" style="width:20px;height:20px;border-width:2px"></div><span id="ws">Waiting for activation...</span></div></div>
+    <div class="err" id="le">${esc(err || '')}</div>
+  </div>${supportHTML()}</div>`;
+  let d;
+  try { d = await ensureDevice(); } catch (e) { $('#le').textContent = 'Cannot reach Arab Sat. Check your internet.'; pollT = setTimeout(() => renderLogin(err), 5000); return; }
+  $('#dc').textContent = fmtCode(d.code);
+  const wa = $('.support a[href^="https://wa.me"]');
+  if (wa) wa.href = `https://wa.me/${SUPPORT.wa}?text=${encodeURIComponent('Arab Sat activation code: ' + d.code)}`;
+  const poll = async () => {
+    if (!$('#dc')) return;
     try {
-      const j = await api({}, acc);
-      const ui = j && j.user_info;
-      if (!ui || String(ui.auth) !== '1') throw new Error('Wrong username or password');
-      if (ui.status && ui.status !== 'Active') throw new Error('This account is ' + ui.status);
-      acc.info = ui;
-      S.acc = acc; store.set('acc', acc); store.set('lastServer', sel); store.set('lastUser', u);
-      location.hash = '#/'; route();
-    } catch (er) {
-      $('#le').textContent = er.message || 'Login failed';
-      btn.disabled = false; btn.textContent = 'Login';
-    }
+      const j = await checkActivation();
+      if (j === 'unknown') { renderLogin(); return; }
+      if (j && j !== 'pending') {
+        const res = await tryLogin(j);
+        if (res === true) { location.hash = '#/'; route(); return; }
+        $('#le').textContent = res;
+      }
+    } catch (e) {}
+    pollT = setTimeout(poll, 4000);
   };
+  poll();
+  onLeave(() => clearTimeout(pollT));
+}
+async function tryLogin(j) {
+  const acc = { s: j.s, u: j.u, p: j.p, name: j.name };
+  try {
+    const r = await api({}, acc);
+    const ui = r && r.user_info;
+    if (!ui || String(ui.auth) !== '1') return 'Your subscription is not active. Please contact customer service.';
+    if (ui.status && ui.status !== 'Active') return 'Your subscription is ' + ui.status + '. Please contact customer service.';
+    acc.info = ui; S.acc = acc; S.mem = {}; store.set('acc', acc);
+    return true;
+  } catch (e) { return 'Connection problem, trying again...'; }
+}
+// every launch: the activation on our side is the source of truth
+async function syncActivation() {
+  if (!device()) { if (S.acc) { S.acc = null; store.del('acc'); route(); } return; }
+  try {
+    const j = await checkActivation();
+    if (j === 'unknown' || j === 'pending') { S.acc = null; store.del('acc'); route(); return; }
+    if (j && applyActivation(j)) route();
+  } catch (e) {}
 }
 
 /* ---------------- home ---------------- */
@@ -200,7 +248,11 @@ function renderHome() {
   refreshAccount();
 }
 async function refreshAccount() {
-  try { const j = await api({}); if (j && j.user_info && String(j.user_info.auth) === '1') { S.acc.info = j.user_info; store.set('acc', S.acc); } } catch (e) {}
+  try {
+    const j = await api({});
+    if (j && j.user_info && String(j.user_info.auth) === '1' && (!j.user_info.status || j.user_info.status === 'Active')) { S.acc.info = j.user_info; store.set('acc', S.acc); }
+    else if (j && j.user_info) { const st = j.user_info.status; S.acc = null; store.del('acc'); renderLogin(st && st !== 'Active' ? 'Your subscription is ' + st + '. Please contact customer service.' : 'Your subscription is not active. Please contact customer service.'); }
+  } catch (e) {}
 }
 function continueList() {
   const all = progAll();
@@ -218,6 +270,7 @@ function openSettings() {
   const exp = ui.exp_date ? new Date(ui.exp_date * 1000).toLocaleDateString() : 'Unlimited';
   const bg = document.createElement('div'); bg.className = 'sheet-bg';
   bg.innerHTML = `<div class="sheet"><div class="grab"></div><h3>My Account</h3>
+    <div class="kv"><span>Activation code</span><b>${esc(fmtCode((device() || {}).code || '-'))}</b></div>
     <div class="kv"><span>Username</span><b>${esc(S.acc.u)}</b></div>
     <div class="kv"><span>Server</span><b>${esc(S.acc.name)}</b></div>
     <div class="kv"><span>Status</span><b class="${ui.status === 'Active' ? 'ok' : ''}">${esc(ui.status || '-')}</b></div>
@@ -225,11 +278,9 @@ function openSettings() {
     <div class="kv"><span>Connections</span><b>${esc((ui.active_cons || 0) + ' / ' + (ui.max_connections || '-'))}</b></div>
     <div style="height:16px"></div>
     <button class="btn ghost" id="clr">Clear watch history</button>
-    <button class="btn red" id="lo" style="margin-top:10px">Log out</button>
     ${supportHTML()}</div>`;
   document.body.appendChild(bg);
   bg.onclick = (e) => { if (e.target === bg) bg.remove(); };
-  $('#lo', bg).onclick = () => { store.del('acc'); S.acc = null; S.mem = {}; bg.remove(); location.hash = '#/'; route(); };
   $('#clr', bg).onclick = () => { store.del('prog_' + acckey()); bg.remove(); toast('Watch history cleared'); route(); };
 }
 
@@ -568,4 +619,6 @@ async function renderNew() {
 }
 
 route();
+syncActivation();
+document.addEventListener('visibilitychange', () => { if (!document.hidden) syncActivation(); });
 })();
