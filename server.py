@@ -263,6 +263,9 @@ class Handler(SimpleHTTPRequestHandler):
         if idx.startswith("c"):  # custom server saved with one activation code
             rec = act_load().get(idx[1:]) or {}
             if not rec.get("host"):
+                # the one-off URL was later saved as a named package: follow it
+                if rec.get("s") is not None and not str(rec["s"]).startswith("c"):
+                    return self.server_host(rec["s"])
                 raise ValueError("bad server")
             return rec["host"]
         servers = load_servers()
@@ -584,6 +587,58 @@ class Handler(SimpleHTTPRequestHandler):
                                    "created": rec.get("ts", 0), "activated_at": rec.get("at", 0)})
         if url.path.startswith("/api/pk/"):
             return self.pk_post(url.path)
+        if url.path in ("/api/codes", "/api/servers/add"):   # bot (owner tools): list codes / save a URL as a named package
+            key = activate_key()
+            if not key or not hmac.compare_digest(self.headers.get("X-Key", ""), key):
+                return self.send_json({"error": "not found"}, 404)
+            try:
+                body = self.read_body()
+            except Exception:
+                body = {}
+            if url.path == "/api/codes":
+                sv = load_servers()
+                out = []
+                for code, rec in act_load().items():
+                    s = rec.get("s")
+                    custom = str(s).startswith("c") if s is not None else False
+                    name = (rec.get("name") or "Custom server") if custom else (sv[int(s)]["name"] if s is not None and int(s) < len(sv) else "")
+                    out.append({"code": code, "activated": bool(rec.get("u")), "username": rec.get("u") or "",
+                                "server": name, "custom": custom, "host": rec.get("host", "") if custom else "",
+                                "device": "Android app" if rec.get("aid") else ("iPhone / web (Face ID)" if rec.get("pk") else "web"),
+                                "created": rec.get("ts", 0), "activated_at": rec.get("at", 0)})
+                return self.send_json({"codes": out, "servers": [x["name"] for x in sv]})
+            name = str(body.get("name") or "").strip()[:40]
+            host = str(body.get("host") or "").strip()
+            if host and not host.lower().startswith(("http://", "https://")):
+                host = "http://" + host
+            pu = urllib.parse.urlsplit(host)
+            if not name or not pu.hostname:
+                return self.send_json({"ok": False, "error": "bad"})
+            host = "%s://%s" % (pu.scheme, pu.netloc)
+            with _act_lock:
+                sv = load_servers()
+                idx = next((i for i, x in enumerate(sv) if x["host"].rstrip("/").lower() == host.lower()), None)
+                if idx is None:
+                    sv.append({"name": name, "host": host})
+                    idx = len(sv) - 1
+                else:
+                    sv[idx]["name"] = name
+                tmp = os.path.join(ROOT, "servers.json.tmp")
+                with open(tmp, "w", encoding="utf-8") as f:
+                    json.dump(sv, f, ensure_ascii=False, indent=1)
+                os.replace(tmp, os.path.join(ROOT, "servers.json"))
+                # codes already activated on this URL as a one-off now belong to the named package
+                d = act_load()
+                moved = 0
+                for code, rec in d.items():
+                    if str(rec.get("s", "")).startswith("c") and str(rec.get("host", "")).rstrip("/").lower() == host.lower():
+                        rec["s"] = idx
+                        rec.pop("host", None)
+                        rec.pop("name", None)
+                        moved += 1
+                act_save(d)
+            logline(ev="server_add", name=name, moved=moved)
+            return self.send_json({"ok": True, "id": idx, "moved": moved})
         if url.path == "/api/deactivate":   # bot: switch a device code off (back to the activation screen)
             key = activate_key()
             if not key or not hmac.compare_digest(self.headers.get("X-Key", ""), key):
