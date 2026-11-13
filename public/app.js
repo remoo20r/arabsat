@@ -327,50 +327,103 @@ function openSettings() {
 /* ---------------- live ---------------- */
 /* ---------------- side menu (categories): sidebar on big screens, drawer on phones ---------------- */
 const icoMenu = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M4 6h16M4 12h16M4 18h10"/></svg>';
-function sideLayout(title, extraBar) {
-  return `<div class="bar"><button class="ibtn" data-back>${I.back}</button><h1 dir="auto">${esc(title)}</h1>
+function sideLayout(title, extraBar, opts) {
+  opts = opts || {};
+  return `<div class="bar"><button class="ibtn" data-back>${I.back}</button>
+    <div class="ttl"><img src="icon-192.png" alt="" class="ttl-logo"><h1 dir="auto">${esc(title)}</h1></div>
+    <div class="barclock"><b id="bck"></b><span id="bcd"></span></div>
     <button class="catbtn" id="catbtn">${icoMenu}<span id="catname" dir="auto"></span></button>
     <button class="ibtn" data-go="#/search">${I.search}</button>${extraBar || ''}</div>
-    <div class="sec"><div class="sideback" id="sideback"></div><aside class="side" id="side"><div class="side-h">Categories</div><div id="cats"></div></aside>
-    <main class="secmain" id="secmain"></main></div>`;
+    <div class="sec${opts.cls ? ' ' + opts.cls : ''}"><div class="sideback" id="sideback"></div><aside class="side" id="side">
+      <div class="catsearch">${I.search}<input id="catq" placeholder="Search in categories" autocomplete="off" autocapitalize="off" dir="auto"></div>
+      <div id="cats"></div></aside>
+    <main class="secmain${opts.cls ? ' ' + opts.cls : ''}" id="secmain"></main></div>`;
 }
-function wireSide(cats, current, onPick) {
+function startBarClock() {
+  const tick = () => { const b = $('#bck'); if (!b) return; const n = new Date();
+    b.textContent = n.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' });
+    $('#bcd').textContent = n.toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' }); };
+  tick(); const iv = setInterval(tick, 15000); onLeave(() => clearInterval(iv));
+}
+function wireSide(cats, current, onPick, counts) {
   const box = $('#cats'), side = $('#side'), back = $('#sideback');
   const open = () => { side.classList.add('open'); back.classList.add('open'); };
   const close = () => { side.classList.remove('open'); back.classList.remove('open'); };
   $('#catbtn').onclick = () => side.classList.contains('open') ? close() : open();
   back.onclick = close;
-  // swipe from the left edge opens the menu, swipe left closes it
   let sx = null, sy = 0;
   const ts = (e) => { const t = e.touches[0]; sx = t.clientX; sy = t.clientY; };
   const te = (e) => { if (sx == null) return; const t = e.changedTouches[0]; const dx = t.clientX - sx, dy = Math.abs(t.clientY - sy);
     if (dy < 60) { if (sx < 28 && dx > 60) open(); else if (dx < -60 && side.classList.contains('open')) close(); } sx = null; };
   document.addEventListener('touchstart', ts, { passive: true }); document.addEventListener('touchend', te, { passive: true });
   onLeave(() => { document.removeEventListener('touchstart', ts); document.removeEventListener('touchend', te); });
-  const draw = (cur) => {
-    box.innerHTML = cats.map(c => `<button class="cat ${String(c.category_id) === String(cur) ? 'on' : ''}" data-c="${esc(c.category_id)}" dir="auto">${esc(c.category_name)}</button>`).join('');
-    const c = cats.find(x => String(x.category_id) === String(cur)); $('#catname').textContent = c ? c.category_name : '';
-    const on = $('.cat.on', box); if (on) on.scrollIntoView({ block: 'nearest' });
+  let cur = current, cnt = counts || {}, q = '';
+  const draw = (c) => {
+    if (c !== undefined) cur = c;
+    const ql = q.toLowerCase();
+    box.innerHTML = cats.filter(x => !ql || String(x.category_name).toLowerCase().includes(ql)).map(x =>
+      `<button class="cat ${String(x.category_id) === String(cur) ? 'on' : ''}" data-c="${esc(x.category_id)}"><span dir="auto">${esc(x.category_name)}</span>${cnt[x.category_id] != null ? `<em>${cnt[x.category_id]}</em>` : ''}</button>`).join('') || '<div class="empty">No categories</div>';
+    const f = cats.find(x => String(x.category_id) === String(cur)); $('#catname').textContent = f ? f.category_name : '';
+    const on = $('.cat.on', box); if (on && !q) on.scrollIntoView({ block: 'nearest' });
   };
+  $('#catq').oninput = (e) => { q = e.target.value.trim(); draw(); };
   box.onclick = (e) => { const b = e.target.closest('.cat'); if (!b) return; draw(b.dataset.c); close(); onPick(b.dataset.c); };
   draw(current);
-  return { draw, open, close };
+  return { draw, open, close, setCounts: (c) => { cnt = c; draw(); } };
+}
+
+/* ---------------- program guide (EPG) cache ---------------- */
+S.epg = {};
+async function epgFor(sid, limit) {
+  const k = sid + ':' + limit, hit = S.epg[k];
+  if (hit && Date.now() - hit.t < 10 * 60 * 1000) return hit.v;
+  const j = await api({ action: 'get_short_epg', stream_id: sid, limit });
+  const v = ((j && j.epg_listings) || []).map(x => ({ title: b64(x.title), start: +x.start_timestamp || 0, end: +(x.stop_timestamp || x.end_timestamp) || 0 }))
+    .filter(x => !x.end || x.end * 1000 > Date.now() - 60000);
+  S.epg[k] = { t: Date.now(), v }; return v;
+}
+const hm = (ts) => new Date(ts * 1000).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' });
+function nowProg(list) {
+  const n = Date.now() / 1000; const p = list.find(x => x.start <= n && (!x.end || x.end > n)) || list[0];
+  if (!p) return null; const pct = p.end > p.start ? Math.max(0, Math.min(100, (n - p.start) / (p.end - p.start) * 100)) : 0;
+  return { title: p.title, pct };
+}
+// fills "now playing" lines for rows as they scroll into view (a few at a time)
+function epgRows(container, arr) {
+  const queue = [], busy = { n: 0 };
+  const pump = () => {
+    while (busy.n < 3 && queue.length) {
+      const row = queue.shift(); if (!row.isConnected) continue;
+      const c = arr[+row.dataset.i]; if (!c) continue; busy.n++;
+      epgFor(c.stream_id, 2).then(l => { const p = nowProg(l); const el = row.querySelector('.epn');
+        if (el) { el.textContent = p ? p.title : 'No program info'; const bar = row.querySelector('.epb b'); if (bar && p) { bar.style.width = p.pct + '%'; row.querySelector('.epb').classList.add('on'); } } })
+        .catch(() => {}).finally(() => { busy.n--; pump(); });
+    }
+  };
+  const io = new IntersectionObserver((en) => { en.forEach(e => { if (e.isIntersecting && !e.target._ep) { e.target._ep = 1; queue.push(e.target); io.unobserve(e.target); } }); pump(); }, { root: null, rootMargin: '200px' });
+  const watch = () => $$('.row', container).forEach(r => { if (!r._ep && !r._w) { r._w = 1; io.observe(r); } });
+  onLeave(() => io.disconnect());
+  return watch;
 }
 
 /* ---------------- live ---------------- */
 const isWide = () => window.matchMedia('(min-width: 900px)').matches;
 async function renderLive(catId) {
-  app.innerHTML = sideLayout('Live TV');
+  app.innerHTML = sideLayout('Live TV', '', { cls: 'live3' });
+  startBarClock();
   $('#secmain').innerHTML = `
-    <div class="livebox hidden" id="lbx">
-      <div class="vwrap" id="vwrap"><video id="lv" playsinline webkit-playsinline autoplay controls></video><div class="vmsg hidden" id="vm"></div>
+    <div class="list" id="ll">${spinner()}</div>
+    <div class="livecol">
+    <div class="livebox ${isWide() ? '' : 'hidden'}" id="lbx">
+      <div class="vwrap" id="vwrap"><video id="lv" playsinline webkit-playsinline autoplay controls></video>
+        <div class="vmsg ${isWide() ? '' : 'hidden'}" id="vm">${isWide() ? '<div class="pick">Choose a channel<small>Click it again to watch full screen</small></div>' : ''}</div>
         <div class="tvtap" id="tvtap"></div>
         <div class="tvtop"><button class="ibtn" id="tvx">${I.back}</button><div class="tx"><div class="nn" dir="auto"></div><small class="ne" dir="auto"></small></div><span class="live">LIVE</span></div>
         <div class="tvpanel"><div class="tvcats" id="tvcats"></div><div class="tvchs" id="tvchs"></div></div>
       </div>
       <div class="nowbar"><span class="live">LIVE</span><div class="tx"><div class="nn" dir="auto"></div><small class="ne" dir="auto"></small></div>
         <button class="ibtn" id="fs">${I.full}</button><button class="ibtn" id="xc">${I.close}</button></div></div>
-    <div class="list" id="ll">${spinner()}</div>`;
+    <div class="epglist" id="epgl"></div></div>`;
   let cats;
   try { cats = await cached('lc', { action: 'get_live_categories' }); } catch (e) { $('#ll').innerHTML = empty(e.message); return; }
   const fav = favs('live');
@@ -378,9 +431,14 @@ async function renderLive(catId) {
   if (!catId) catId = store.get('lastLiveCat_' + acckey(), null);
   if (!allCats.some(c => String(c.category_id) === String(catId))) catId = allCats.length ? allCats[0].category_id : null;
   const video = $('#lv'), lbx = $('#lbx');
-  let current = null, list = [], playList = [], tvCat = null, hideT = null;
-  onLeave(() => { stopVideo(video); document.removeEventListener('keydown', onKey); clearTimeout(hideT); document.body.classList.remove('tvon'); });
+  let current = null, list = [], playList = [], tvCat = null, hideT = null, tvList = [];
+  onLeave(() => { stopVideo(video); document.removeEventListener('keydown', onKey, true); clearTimeout(hideT); document.body.classList.remove('tvon'); });
   const side = wireSide(allCats, catId, (c) => loadCat(c));
+  // channel counts per category (from the full list, in the background)
+  cached('all_l', { action: 'get_live_streams' }).then(all => {
+    const cnt = {}; all.forEach(c => { cnt[c.category_id] = (cnt[c.category_id] || 0) + 1; }); cnt.fav = favs('live').length;
+    if ($('#cats')) side.setCounts(cnt);
+  }).catch(() => {});
 
   const getList = async (cid) => cid === 'fav' ? favs('live').map(f => f.raw) : cached('ls_' + cid, { action: 'get_live_streams', category_id: cid });
   async function loadCat(cid) {
@@ -388,18 +446,22 @@ async function renderLive(catId) {
     $('#ll').innerHTML = spinner();
     try { list = await getList(cid); } catch (e) { $('#ll').innerHTML = empty(e.message); return; }
     if (!list.length) { $('#ll').innerHTML = empty('No channels here'); return; }
-    renderRows($('#ll'), list, 0);
+    renderRows($('#ll'), list, 0, false);
   }
   const logo = (c) => { const lg = img(c.stream_icon);
     return `<div class="lg">${lg ? `<img loading="lazy" src="${esc(lg)}" onerror="this.replaceWith(Object.assign(document.createElement('span'),{className:'ph',textContent:'TV'}))">` : '<span class="ph">TV</span>'}</div>`; };
-  const rowHTML = (c, i, withStar) => `<div class="row ${current && current.stream_id == c.stream_id ? 'on' : ''}" data-i="${i}">
-      <span class="no">${esc(c.num || i + 1)}</span>${logo(c)}<div class="nm"><div dir="auto">${esc(c.name)}</div></div>
-      ${withStar ? `<button class="star ${isFav('live', c.stream_id) ? 'on' : ''}" data-f="${i}">${isFav('live', c.stream_id) ? I.star : I.starO}</button>` : ''}</div>`;
+  const rowHTML = (c, i, withStar) => `<div class="row ${current && current.stream_id == c.stream_id ? 'on' : ''}" data-i="${i}" tabindex="0">
+      <span class="no">${esc(c.num || i + 1)}</span>${logo(c)}<div class="nm"><div dir="auto">${esc(c.name)}</div><small class="epn" dir="auto"></small><i class="epb"><b></b></i></div>
+      ${withStar ? `<button class="star ${isFav('live', c.stream_id) ? 'on' : ''}" data-f="${i}" tabindex="-1">${isFav('live', c.stream_id) ? I.star : I.starO}</button>` : ''}</div>`;
   function renderRows(el, arr, from, compact) {
     if (from === 0) el.innerHTML = '';
     el.insertAdjacentHTML('beforeend', arr.slice(from, from + 200).map((c, k) => rowHTML(c, from + k, !compact)).join(''));
+    if (el.id === 'll') { epgMain(); } else epgTv();
     if (from + 200 < arr.length) setTimeout(() => { if (el.isConnected) renderRows(el, arr, from + 200, compact); }, 60);
   }
+  const epgMainW = epgRows($('#ll'), new Proxy([], { get: (t, k) => k === 'length' ? list.length : list[k] }));
+  const epgTvW = epgRows($('#tvchs'), new Proxy([], { get: (t, k) => k === 'length' ? tvList.length : tvList[k] }));
+  function epgMain() { epgMainW(); } function epgTv() { epgTvW(); }
   function markOn() { $$('.row').forEach(r => { const arr = r.closest('#tvchs') ? tvList : list; const c = arr[+r.dataset.i]; r.classList.toggle('on', !!(c && current && c.stream_id == current.stream_id)); }); }
   $('#ll').onclick = (e) => {
     const f = e.target.closest('[data-f]');
@@ -409,60 +471,71 @@ async function renderLive(catId) {
     const c = list[+r.dataset.i];
     if (current && current.stream_id == c.stream_id) { enterTV(); return; }
     playList = list; play(c);
-    if (isWide()) enterTV();
   };
+  $('#ll').ondblclick = (e) => { if (e.target.closest('.row') && current) enterTV(); };
+  async function drawGuide(c) {
+    const el = $('#epgl'); if (!el) return;
+    el.innerHTML = `<div class="g-h"><b dir="auto">${esc(c.name)}</b><span>Program guide</span></div><div class="loading"><div class="spin"></div></div>`;
+    try {
+      const l = await epgFor(c.stream_id, 8); if (current !== c) return;
+      const n = Date.now() / 1000;
+      el.innerHTML = `<div class="g-h"><b dir="auto">${esc(c.name)}</b><span>Program guide</span></div>` + (l.length ? l.map(p => {
+        const live = p.start <= n && (!p.end || p.end > n);
+        const pct = live && p.end > p.start ? (n - p.start) / (p.end - p.start) * 100 : 0;
+        return `<div class="g-r ${live ? 'now' : ''}"><span class="g-t">${hm(p.start)}${p.end ? ' – ' + hm(p.end) : ''}</span><span class="g-n" dir="auto">${esc(p.title)}</span>${live ? `<i class="epb on"><b style="width:${pct}%"></b></i>` : ''}</div>`; }).join('')
+        : '<div class="empty" style="padding:24px">No program guide for this channel</div>');
+    } catch (e) { el.innerHTML = ''; }
+  }
   function play(c) {
     current = c; markOn();
     lbx.classList.remove('hidden');
     $$('.nn', lbx).forEach(x => x.textContent = c.name); $$('.ne', lbx).forEach(x => x.textContent = '');
     playLive(video, c, $('#vm'));
-    if (!lbx.classList.contains('tv')) window.scrollTo({ top: 0, behavior: 'smooth' });
-    api({ action: 'get_short_epg', stream_id: c.stream_id, limit: 2 }).then(j => {
-      if (current !== c) return;
-      const L = (j && j.epg_listings) || []; if (!L.length) return;
-      const t = (x) => new Date((x.start_timestamp || 0) * 1000).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' });
-      $$('.ne', lbx).forEach(x => x.textContent = 'Now: ' + b64(L[0].title) + (L[1] ? '  ·  ' + t(L[1]) + ' ' + b64(L[1].title) : ''));
-    }).catch(() => {});
+    if (!lbx.classList.contains('tv') && !isWide()) window.scrollTo({ top: 0, behavior: 'smooth' });
+    drawGuide(c);
+    epgFor(c.stream_id, 2).then(l => { if (current !== c) return; const p = nowProg(l); if (p) $$('.ne', lbx).forEach(x => x.textContent = 'Now: ' + p.title); }).catch(() => {});
   }
   // ---- TV mode: full screen video with translucent categories + channels on top ----
-  let tvList = [];
   function enterTV() {
+    if (!current) return;
     lbx.classList.add('tv'); document.body.classList.add('tvon');
     tvCat = store.get('lastLiveCat_' + acckey(), catId);
     drawTvCats(); loadTvCat(tvCat); showPanel();
     video.play().catch(() => {});
   }
-  function exitTV() {
-    lbx.classList.remove('tv', 'panel'); document.body.classList.remove('tvon'); clearTimeout(hideT);
-    if (isWide()) { stopVideo(video); lbx.classList.add('hidden'); current = null; markOn(); }
-  }
+  function exitTV() { lbx.classList.remove('tv', 'panel'); document.body.classList.remove('tvon'); clearTimeout(hideT); const on = $('#ll .row.on'); if (on) on.focus({ preventScroll: false }); }
   function drawTvCats() {
-    $('#tvcats').innerHTML = allCats.map(c => `<button class="cat ${String(c.category_id) === String(tvCat) ? 'on' : ''}" data-c="${esc(c.category_id)}" dir="auto">${esc(c.category_name)}</button>`).join('');
+    $('#tvcats').innerHTML = allCats.map(c => `<button class="cat ${String(c.category_id) === String(tvCat) ? 'on' : ''}" data-c="${esc(c.category_id)}"><span dir="auto">${esc(c.category_name)}</span></button>`).join('');
     const on = $('#tvcats .cat.on'); if (on) on.scrollIntoView({ block: 'center' });
   }
   async function loadTvCat(cid) {
     tvCat = cid; const el = $('#tvchs'); el.innerHTML = spinner();
     try { tvList = await getList(cid); } catch (e) { el.innerHTML = empty(e.message); return; }
     renderRows(el, tvList, 0, true);
-    setTimeout(() => { const on = $('#tvchs .row.on'); if (on) on.scrollIntoView({ block: 'center' }); }, 50);
+    setTimeout(() => { const on = $('#tvchs .row.on'); if (on) { on.scrollIntoView({ block: 'center' }); on.focus({ preventScroll: true }); } }, 60);
   }
   function showPanel() { lbx.classList.add('panel'); clearTimeout(hideT); hideT = setTimeout(() => lbx.classList.remove('panel'), 6000); }
   $('#tvcats').onclick = (e) => { const b = e.target.closest('.cat'); if (!b) return; showPanel(); $$('#tvcats .cat').forEach(x => x.classList.toggle('on', x === b)); loadTvCat(b.dataset.c); };
   $('#tvchs').onclick = (e) => { const r = e.target.closest('.row'); if (!r) return; showPanel(); playList = tvList; play(tvList[+r.dataset.i]); };
   $('#tvchs').onscroll = $('#tvcats').onscroll = () => showPanel();
   $('#tvtap').onclick = () => { if (lbx.classList.contains('panel')) { lbx.classList.remove('panel'); clearTimeout(hideT); } else showPanel(); };
+  $('#tvtap').ondblclick = () => exitTV();
   lbx.addEventListener('mousemove', () => { if (lbx.classList.contains('tv')) showPanel(); });
   $('#tvx').onclick = exitTV;
   $('#fs').onclick = enterTV;
-  $('#xc').onclick = () => { stopVideo(video); lbx.classList.add('hidden'); current = null; markOn(); };
-  function zap(d) { if (!current || !playList.length) return; let i = playList.findIndex(c => c.stream_id == current.stream_id); i = (i + d + playList.length) % playList.length; play(playList[i]); showPanel(); }
+  $('#xc').onclick = () => { stopVideo(video); current = null; markOn(); if (!isWide()) lbx.classList.add('hidden'); };
+  function zap(d) { if (!current || !playList.length) return; let i = playList.findIndex(c => c.stream_id == current.stream_id); i = (i + d + playList.length) % playList.length; play(playList[i]); }
   function onKey(e) {
     if (!lbx.classList.contains('tv')) return;
-    if (e.key === 'Escape') { if (lbx.classList.contains('panel')) lbx.classList.remove('panel'); else exitTV(); }
-    else if (e.key === 'ArrowUp') { e.preventDefault(); zap(-1); } else if (e.key === 'ArrowDown') { e.preventDefault(); zap(1); }
-    else if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); showPanel(); }
+    const panel = lbx.classList.contains('panel');
+    if (e.key === 'Escape' || e.key === 'Backspace') { e.preventDefault(); e.stopPropagation(); if (panel) lbx.classList.remove('panel'); else exitTV(); return; }
+    if (!panel) {
+      if (e.key === 'ArrowUp') { e.preventDefault(); e.stopPropagation(); zap(-1); }
+      else if (e.key === 'ArrowDown') { e.preventDefault(); e.stopPropagation(); zap(1); }
+      else if (['Enter', ' ', 'ArrowLeft', 'ArrowRight'].includes(e.key)) { e.preventDefault(); e.stopPropagation(); showPanel(); const on = $('#tvchs .row.on') || $('#tvchs .row'); if (on) on.focus(); }
+    } else showPanel();
   }
-  document.addEventListener('keydown', onKey);
+  document.addEventListener('keydown', onKey, true);
   if (catId != null) loadCat(String(catId));
 }
 
@@ -598,6 +671,7 @@ function openPlayer(o) {
 async function renderGridSection(kind, catId) {
   const isV = kind === 'vod';
   app.innerHTML = sideLayout(isV ? 'Movies' : 'Series');
+  startBarClock();
   const main = $('#secmain'); main.innerHTML = `<div id="gw">${spinner()}</div>`;
   let cats;
   try { cats = await cached(isV ? 'vc' : 'sc', { action: isV ? 'get_vod_categories' : 'get_series_categories' }); }
@@ -774,6 +848,58 @@ async function renderNew() {
   $$('.chips .chip').forEach(b => b.onclick = () => { $$('.chips .chip').forEach(x => x.classList.toggle('on', x === b)); show(b.dataset.k); });
   show('v');
 }
+
+/* ---------------- keyboard / remote navigation (arrows move the focus, Enter opens) ---------------- */
+const NAV_SEL = '.tile,.cat,.row,.pc,.ep,.cw,.ibtn,.catbtn,.newbtn,.chip,.btn,.srv,.input,.star.on';
+function navCandidates() {
+  let scope = document;
+  const tv = document.querySelector('.livebox.tv'); if (tv) scope = tv;
+  const sheet = document.querySelector('.sheet-bg'); if (sheet) scope = sheet;
+  const fp = document.querySelector('.fp'); if (fp) scope = fp;
+  return Array.from(scope.querySelectorAll(NAV_SEL)).filter(el => {
+    if (el.disabled || el.closest('.hidden')) return false;
+    const r = el.getBoundingClientRect(); if (!r.width || !r.height) return false;
+    const st = getComputedStyle(el); if (st.visibility === 'hidden' || +st.opacity === 0) return false;
+    if (el.closest('.side') && !el.closest('.side.open') && !isWide()) return false;
+    return r.bottom > -200 && r.top < innerHeight + 200;
+  });
+}
+function navMove(dir) {
+  const cands = navCandidates(); if (!cands.length) return;
+  const cur = document.activeElement && cands.includes(document.activeElement) ? document.activeElement : null;
+  if (!cur) { (cands.find(el => el.classList.contains('on')) || cands[0]).focus(); return; }
+  const a = cur.getBoundingClientRect(), ax = a.left + a.width / 2, ay = a.top + a.height / 2;
+  let best = null, bs = Infinity;
+  for (const el of cands) {
+    if (el === cur) continue;
+    const b = el.getBoundingClientRect(), bx = b.left + b.width / 2, by = b.top + b.height / 2;
+    const dx = bx - ax, dy = by - ay;
+    let main, cross;
+    if (dir === 'ArrowRight') { if (b.left < a.right - 4 && dx <= 4) continue; main = Math.max(0, b.left - a.right); cross = Math.abs(dy); }
+    else if (dir === 'ArrowLeft') { if (b.right > a.left + 4 && dx >= -4) continue; main = Math.max(0, a.left - b.right); cross = Math.abs(dy); }
+    else if (dir === 'ArrowDown') { if (b.top < a.bottom - 4 && dy <= 4) continue; main = Math.max(0, b.top - a.bottom); cross = Math.abs(dx); }
+    else { if (b.bottom > a.top + 4 && dy >= -4) continue; main = Math.max(0, a.top - b.bottom); cross = Math.abs(dx); }
+    const sc = main + cross * 2.2 + (el.parentElement === cur.parentElement ? -6 : 0);
+    if (sc < bs) { bs = sc; best = el; }
+  }
+  if (best) { best.focus({ preventScroll: true }); best.scrollIntoView({ block: 'nearest', inline: 'nearest' }); }
+}
+document.addEventListener('keydown', (e) => {
+  if (e.defaultPrevented || e.altKey || e.ctrlKey || e.metaKey) return;
+  const t = e.target;
+  const typing = t && (t.tagName === 'INPUT' || t.tagName === 'TEXTAREA');
+  if (['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'].includes(e.key)) {
+    if (typing && (e.key === 'ArrowLeft' || e.key === 'ArrowRight')) return;
+    if (t && t.tagName === 'VIDEO') return;
+    e.preventDefault(); navMove(e.key); document.body.classList.add('kbd');
+  } else if (e.key === 'Enter' && t && !typing && t.matches && t.matches('.row,.cw,.pc,.ep,.tile') && t.tagName !== 'BUTTON') { e.preventDefault(); t.click(); }
+  else if ((e.key === 'Escape' || e.key === 'Backspace') && !typing && !document.querySelector('.livebox.tv')) {
+    const sh = document.querySelector('.sheet-bg'); if (sh) { sh.remove(); return; }
+    if (fpEl) { closePlayer(); return; }
+    if (location.hash && location.hash !== '#/') { e.preventDefault(); history.back(); }
+  }
+});
+document.addEventListener('mousedown', () => document.body.classList.remove('kbd'));
 
 route();
 syncActivation();
