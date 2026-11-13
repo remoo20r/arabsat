@@ -978,3 +978,80 @@ body.light .h3clock .d{color:#6b5558}
   .wxfx .ry{width:180px;height:180px;right:-70px;top:-70px}
   .wxfx .sg.sm{width:110px;height:110px;right:-40px;top:-40px}.wxfx .ry.sm{width:130px;height:130px;right:-50px;top:-50px}
 }
+
+/* ---- Live TV v2: man on a chair turns on a football match (7s seamless loop) ---- */
+.sc-live2 .lv2-tv{transform-origin:154px 58px;animation:l2tv 7s ease-in-out infinite}
+@keyframes l2tv{0%,20%{transform:scale(1)}32%,84%{transform:scale(1.05)}94%,100%{transform:scale(1)}}
+.sc-live2 .lv2-scr{transform-origin:154px 58px;animation:l2scr 7s infinite}
+@keyframes l2scr{0%,18%{transform:scale(0,.02);opacity:0}19%{opacity:1;transform:scale(.05,.02)}22%{transform:scale(1,.03)}26%,86%{transform:scale(1,1)}89%{transform:scale(1,.03)}92%{transform:scale(.05,.02);opacity:1}93%,100%{transform:scale(0,.02);opacity:0}}
+.sc-live2 .lv2-line{transform-origin:154px 58px;opacity:0;animation:l2line 7s infinite}
+@keyframes l2line{0%,18%{opacity:0;transform:scaleX(0)}21%{opacity:1;transform:scaleX(1)}26%,87%{opacity:0;transform:scaleX(1)}89%{opacity:1}92%{opacity:1;transform:scaleX(.05)}93%,100%{opacity:0;transform:scaleX(0)}}
+.sc-live2 .lv2-glow{opacity:0;animation:l2gl 7s infinite}
+@keyframes l2gl{0%,22%{opacity:0}30%,52%{opacity:.7}58%,78%{opacity:1}88%,100%{opacity:0}}
+.sc-live2 .lv2-arm{transform-origin:42px 90px;animation:l2arm 7s ease-in-out infinite}
+@keyframes l2arm{0%,5%{transform:rotate(0)}12%,18%{transform:rotate(-32deg)}26%,80%{transform:rotate(0)}85%,89%{transform:rotate(-32deg)}95%,100%{transform:rotate(0)}}
+.sc-live2 .lv2-btn{fill:#8E121F;animation:l2btn 7s infinite}
+@keyframes l2btn{0%,13%{fill:#8E121F}14%,18%{fill:#ff6b7a}19%,85%{fill:#8E121F}86%,89%{fill:#ff6b7a}90%,100%{fill:#8E121F}}
+.sc-live2 .lv2-ir{opacity:0;animation:l2ir 7s infinite}.sc-live2 .i2{animation-delay:.08s}.sc-live2 .i3{animation-delay:.16s}
+@keyframes l2ir{0%,13%{opacity:0}15%{opacity:1}20%,85%{opacity:0}87%{opacity:1}91%,100%{opacity:0}}
+.sc-live2 .lv2-pl{animation:l2pl 7s linear infinite}
+@keyframes l2pl{0%,28%{transform:translate(-24px,0)}40%,66%{transform:translate(0,0)}70%{transform:translate(3px,-6px)}73%{transform:translate(5px,0)}76%{transform:translate(7px,-5px)}79%,100%{transform:translate(8px,0)}}
+.sc-live2 .lv2-run{animation:l2run 7s linear infinite}
+@keyframes l2run{0%,28%{transform:translateY(0)}31%{transform:translateY(-1.5px)}34%{transform:translateY(0)}37%{transform:translateY(-1.5px)}40%,100%{transform:translateY(0)}}
+.sc-live2 .lv2-kick{transform-origin:142px 77px;animation:l2kick 7s ease-in-out infinite}
+@keyframes l2kick{0%,38%{transform:rotate(0)}41%{transform:rotate(45deg)}44%{transform:rotate(-35deg)}48%,100%{transform:rotate(0)}}
+.sc-live2 .lv2-ball{animation:l2ball 7s infinite}
+@keyframes l2ball{0%,43%{transform:translate(0,0)}47%{transform:translate(18px,-16px)}51%{transform:translate(38px,-19px)}54%{transform:translate(48px,-15px)}57%{transform:translate(45px,-13px)}60%,100%{transform:translate(46px,-6px)}}
+.sc-live2 .lv2-net{transform-origin:200px 69px;animation:l2net 7s infinite}
+@keyframes l2net{0%,53%{transform:scaleX(1)}55%{transform:scaleX(1.45)}58%{transform:scaleX(.85)}61%,100%{transform:scaleX(1)}}
+.sc-live2 .lv2-goal{transform-origin:152px 57px;opacity:0;animation:l2goal 7s infinite}
+@keyframes l2goal{0%,54%{transform:scale(0);opacity:0}58%{transform:scale(1.3);opacity:1}61%{transform:scale(1)}66%{transform:scale(1.12)}71%,80%{transform:scale(1);opacity:1}85%,100%{transform:scale(.6);opacity:0}}
+.sc-live2 .lv2-crowd{animation:l2crowd 7s infinite}
+@keyframes l2crowd{0%,54%{transform:translateY(0)}57%{transform:translateY(-2.5px)}60%{transform:translateY(0)}63%{transform:translateY(-2.5px)}66%{transform:translateY(0)}69%{transform:translateY(-2.5px)}72%{transform:translateY(0)}75%{transform:translateY(-2px)}78%,100%{transform:translateY(0)}}
+.sc-live2 .lv2-fl{opacity:0;animation:l2fl 7s steps(1) infinite}
+@keyframes l2fl{0%,55%{opacity:0}57%{opacity:1}59%{opacity:0}61%{opacity:1}63%{opacity:0}66%{opacity:1}68%{opacity:0}71%{opacity:1}73%,100%{opacity:0}}
+.sc-live2 .lv2-dot{animation:lvdot 1s steps(1) infinite}
+.sc-live2 .lv2-man{animation:l2man 7s ease-in-out infinite}
+@keyframes l2man{0%,56%{transform:translateY(0)}60%{transform:translateY(-4px)}63%{transform:translateY(0)}66%{transform:translateY(-4px)}69%{transform:translateY(0)}72%{transform:translateY(-3px)}75%,100%{transform:translateY(0)}}
+.sc-live2 .lv2-arm2{transform-origin:38px 90px;animation:l2arm2 7s ease-in-out infinite}
+@keyframes l2arm2{0%,55%{transform:rotate(0)}59%{transform:rotate(-108deg)}63%{transform:rotate(-92deg)}67%{transform:rotate(-110deg)}71%{transform:rotate(-94deg)}76%{transform:rotate(-104deg)}80%,100%{transform:rotate(0)}}
+
+/* ---- v5: raised bottom row, Continue Watching oval, rubber stretch ---- */
+.home3 [data-rb]{touch-action:none;-webkit-user-select:none;user-select:none}
+@media (min-width:900px){ .home3 .h3bot{bottom:calc(min(64px,7.5vh) + var(--sb))} .h3cw2{padding-bottom:0} }
+.cwo{position:relative;display:block;width:min(100%,260px);height:104px;padding:0;border:0;background:none;cursor:pointer;color:#fff;font:inherit;
+  border-radius:50%;animation:h3in .6s .45s cubic-bezier(.2,.8,.2,1) both;transition:transform .25s}
+@property --ca{syntax:'<angle>';initial-value:0deg;inherits:false}
+.cwo .halo{position:absolute;inset:-4px;border-radius:50%;background:conic-gradient(from var(--ca),var(--red),var(--goldL),rgba(0,0,0,0) 50%,var(--red));animation:cwca 4s linear infinite;filter:blur(4px);opacity:.8}
+@keyframes cwca{to{--ca:360deg}}
+.cwo .ov{position:absolute;inset:3px;border-radius:50%;overflow:hidden;background:#1a0b0e;box-shadow:inset 0 0 0 2px rgba(243,217,139,.35)}
+.cwo .sl{position:absolute;inset:0;opacity:0;transition:opacity .8s}
+.cwo .sl.on{opacity:1}
+.cwo .pic{position:absolute;inset:0;background:#2a1216 center 25%/cover;animation:cwken 9s ease-in-out infinite alternate}
+@keyframes cwken{from{transform:scale(1.05)}to{transform:scale(1.18) translateX(-4%)}}
+.cwo .sh{position:absolute;inset:0;background:linear-gradient(90deg,rgba(10,4,6,.85) 0%,rgba(10,4,6,.55) 45%,rgba(10,4,6,.1) 100%)}
+.cwo .pl{position:absolute;left:24px;top:50%;width:34px;height:34px;margin-top:-17px;border-radius:50%;background:rgba(211,36,54,.95);display:grid;place-items:center;box-shadow:0 0 0 0 rgba(211,36,54,.6);animation:cwpl2 2s infinite}
+.cwo .pl svg{width:15px;height:15px;margin-left:2px}
+@keyframes cwpl2{0%{box-shadow:0 0 0 0 rgba(211,36,54,.6)}100%{box-shadow:0 0 0 12px rgba(211,36,54,0)}}
+.cwo .tx{position:absolute;left:68px;right:30px;top:50%;transform:translateY(-58%);display:flex;flex-direction:column;text-align:left;min-width:0}
+.cwo .tx b{font-size:14px;font-weight:800;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;text-shadow:0 1px 4px rgba(0,0,0,.8)}
+.cwo .tx em{font-style:normal;font-size:11.5px;color:var(--goldL);font-weight:700;margin-top:2px}
+.cwo .bar{position:absolute;left:68px;right:44px;bottom:22px;height:3px;border-radius:3px;background:rgba(255,255,255,.18);overflow:hidden}
+.cwo .bar i{display:block;height:100%;background:linear-gradient(90deg,var(--red),var(--goldL));animation:cwbar 1.2s .7s cubic-bezier(.2,.8,.2,1) both}
+@keyframes cwbar{from{width:0!important}}
+.cwo .dots{position:absolute;left:50%;bottom:-13px;transform:translateX(-50%);display:flex;gap:5px}
+.cwo .dots i{width:5px;height:5px;border-radius:3px;background:rgba(255,255,255,.3);transition:width .3s,background .3s}
+.cwo .dots i.on{width:14px;background:var(--goldL)}
+.cwo:hover,.cwo:focus-visible{transform:scale(1.06);outline:none}
+.cwo:focus-visible .halo{opacity:1;filter:blur(1.5px)}
+.h3new:focus-visible,.home3 .ibtn:focus-visible{outline:none}
+@media (max-width:899px){
+  .cwo{width:190px;height:64px}
+  .cwo .pl{left:14px;width:26px;height:26px;margin-top:-13px}.cwo .pl svg{width:11px;height:11px}
+  .cwo .tx{left:46px;right:18px}.cwo .tx b{font-size:12px}.cwo .tx em{font-size:10px}
+  .cwo .bar{left:46px;right:26px;bottom:12px}
+  .cwo .dots{bottom:-9px}
+}
+.cwo .bar{top:auto;height:3px;padding:0;margin:0;display:block;border:0;box-shadow:none;backdrop-filter:none}
+.cwo .sl{transition:opacity .5s ease,transform .5s ease;transform:translateX(14px)}
+.cwo .sl.on{transform:none;transition-delay:.25s}

@@ -108,7 +108,7 @@ function applyPrefs() {
 }
 const AR = {
   'Live TV': 'البث المباشر', 'Movies': 'الأفلام', 'Series': 'المسلسلات', 'New Releases': 'الجديد', 'Latest movies & series': 'أحدث الأفلام والمسلسلات',
-  'Continue Watching': 'كمّل المشاهدة', 'Categories': 'الأقسام', 'Search in categories': 'دوّر في الأقسام', 'Search': 'بحث', 'NEW': 'جديد',
+  'Continue Watching': 'كمّل المشاهدة', 'min left': 'دقيقة متبقية', 'Categories': 'الأقسام', 'Search in categories': 'دوّر في الأقسام', 'Search': 'بحث', 'NEW': 'جديد',
   'Active until': 'الاشتراك لحد', 'Expiration Date': 'تاريخ انتهاء الاشتراك', 'Customer Service': 'خدمة العملاء', 'Call': 'اتصال', 'WhatsApp': 'واتساب', 'Clear sky': 'السما صافية', 'Clear night': 'ليل صافي', 'Partly cloudy': 'غيوم خفيفة', 'Cloudy': 'غايم', 'Foggy': 'شبورة', 'Rainy': 'مطر', 'Snowy': 'تلج', 'Thunderstorm': 'عاصفة رعدية', 'Weather': 'الطقس', 'Locating…': 'بنحدد مكانك…', 'Unlimited': 'غير محدود', 'My Account': 'حسابي', 'Activation code': 'كود التفعيل', 'Username': 'اليوزرنيم',
   'Server': 'السيرفر', 'Status': 'الحالة', 'Expires': 'ينتهي', 'Connections': 'الأجهزة', 'Settings': 'الإعدادات', 'Appearance': 'الشكل',
   'Language': 'اللغة', '🌙 Dark': '🌙 داكن', '☀️ Light': '☀️ فاتح', 'Clear watch history': 'امسح سجل المشاهدة', 'Call': 'اتصال', 'WhatsApp': 'واتساب',
@@ -332,32 +332,58 @@ function wxIcon(code) { code = +code;
   if (code <= 67 || (code >= 80 && code <= 82)) return WX.rain; if (code <= 77 || code === 85 || code === 86) return WX.snow; return WX.storm; }
 /* ---------------- animated home scenes (seamless loops: first frame == last frame) ---------------- */
 const SCN = {
-  live: `<svg viewBox="0 0 220 150" class="sc sc-live" aria-hidden="true"><defs>
-    <linearGradient id="lvS" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#E0223A"/><stop offset=".55" stop-color="#6d0d19"/><stop offset="1" stop-color="#D4AF37"/></linearGradient>
-    <radialGradient id="lvG" cx=".5" cy=".5" r=".5"><stop offset="0" stop-color="#ff5468" stop-opacity=".55"/><stop offset="1" stop-color="#ff5468" stop-opacity="0"/></radialGradient>
-    <clipPath id="lvC"><rect x="80" y="36" width="104" height="62" rx="6"/></clipPath></defs>
-    <g class="lv-tv">
-      <ellipse class="lv-glow" cx="132" cy="66" rx="92" ry="64" fill="url(#lvG)"/>
-      <path d="M116 14l14 13M150 12l-14 15" stroke="#C9CED6" stroke-width="3" stroke-linecap="round"/>
-      <rect x="72" y="28" width="120" height="78" rx="12" fill="#1a0b0e" stroke="#C9CED6" stroke-width="3.5"/>
-      <rect x="80" y="36" width="104" height="62" rx="6" fill="#050203"/>
-      <g clip-path="url(#lvC)"><g class="lv-scr">
-        <rect x="80" y="36" width="104" height="62" rx="6" fill="url(#lvS)"/>
-        <rect class="lv-shine" x="60" y="30" width="22" height="80" fill="#fff" opacity=".16" transform="skewX(-18)"/>
-        <path d="M124 54l18 13-18 13z" fill="#fff"/>
-        <rect x="86" y="42" width="27" height="11" rx="3" fill="#000" opacity=".45"/><circle class="lv-dot" cx="91.5" cy="47.5" r="2.4" fill="#ff3b4e"/>
-        <text x="96" y="50.5" font-size="7.5" font-weight="800" fill="#fff" font-family="system-ui,sans-serif">LIVE</text></g></g>
-      <rect class="lv-line" x="80" y="66" width="104" height="2" rx="1" fill="#fff"/>
-      <path d="M112 106l-8 12M152 106l8 12" stroke="#C9CED6" stroke-width="3.5" stroke-linecap="round"/>
+  live: `<svg viewBox="0 0 220 150" class="sc sc-live2" aria-hidden="true"><defs>
+    <radialGradient id="l2G" cx=".5" cy=".5" r=".5"><stop offset="0" stop-color="#7dff9a" stop-opacity=".32"/><stop offset="1" stop-color="#7dff9a" stop-opacity="0"/></radialGradient>
+    <linearGradient id="l2P" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#2a9a4c"/><stop offset="1" stop-color="#17652f"/></linearGradient>
+    <clipPath id="l2C"><rect x="103" y="25" width="102" height="66" rx="5"/></clipPath></defs>
+    <g class="lv2-tv">
+      <ellipse class="lv2-glow" cx="154" cy="58" rx="72" ry="54" fill="url(#l2G)"/>
+      <path d="M144 18l-10-12M164 18l10-12" stroke="#C9CED6" stroke-width="3" stroke-linecap="round"/>
+      <rect x="96" y="18" width="116" height="80" rx="10" fill="#1a0b0e" stroke="#C9CED6" stroke-width="3"/>
+      <rect x="103" y="25" width="102" height="66" rx="5" fill="#050203"/>
+      <g clip-path="url(#l2C)"><g class="lv2-scr">
+        <rect x="103" y="25" width="102" height="21" fill="#2b1222"/>
+        <g class="lv2-crowd">${[30, 36, 41].map((y, r) => Array.from({ length: 21 }, (_, i) => `<circle cx="${105 + i * 5 + (r % 2) * 2.5}" cy="${y}" r="1.9" fill="${['#E0223A', '#F3D98B', '#C9CED6', '#5b9bff', '#ffffff'][(i * 3 + r * 2) % 5]}"/>`).join('')).join('')}</g>
+        <g class="lv2-fl" fill="#fff"><circle cx="112" cy="31" r="1.4"/><circle cx="137" cy="36" r="1.4"/><circle cx="163" cy="30" r="1.4"/><circle cx="188" cy="38" r="1.4"/><circle cx="125" cy="40" r="1.2"/><circle cx="176" cy="33" r="1.2"/></g>
+        <rect x="103" y="46" width="102" height="45" fill="url(#l2P)"/>
+        <g fill="#ffffff" opacity=".07">${[0, 2, 4, 6].map(k => `<rect x="${103 + k * 13}" y="46" width="13" height="45"/>`).join('')}</g>
+        <g fill="none" stroke="#e9f7ee" stroke-width=".9" opacity=".75"><path d="M103 47h102"/><path d="M130 47v44"/><circle cx="130" cy="69" r="8"/><rect x="182" y="55" width="23" height="28"/></g>
+        <g class="lv2-net" stroke="#fff" stroke-width=".6" opacity=".8"><path d="M197 58v22M200 58v22M203 58v22M196 62h9M196 67h9M196 72h9M196 77h9"/></g>
+        <path d="M196 80V57h9" fill="none" stroke="#fff" stroke-width="1.8"/>
+        <g class="lv2-pl"><g class="lv2-run">
+          <path d="M141 77l-3 8" stroke="#1d2230" stroke-width="2.2" stroke-linecap="round"/>
+          <g class="lv2-kick"><path d="M142 77l3 8" stroke="#1d2230" stroke-width="2.2" stroke-linecap="round"/></g>
+          <path d="M142 67v10" stroke="#E0223A" stroke-width="3.6" stroke-linecap="round"/>
+          <path d="M142 69l-4 4M142 69l4 3" stroke="#E0223A" stroke-width="1.6" stroke-linecap="round"/>
+          <circle cx="142" cy="64" r="2.7" fill="#e9b98f"/></g></g>
+        <circle class="lv2-ball" cx="149" cy="84" r="2.3" fill="#fff" stroke="#222" stroke-width=".6"/>
+        <text class="lv2-goal" x="152" y="62" text-anchor="middle" font-size="15" font-weight="900" fill="#F3D98B" stroke="#8E121F" stroke-width="1" paint-order="stroke" font-family="system-ui,sans-serif">GOAL!</text>
+        <rect x="107" y="49" width="25" height="9" rx="2.5" fill="#000" opacity=".5"/><circle class="lv2-dot" cx="111.5" cy="53.5" r="2" fill="#ff3b4e"/>
+        <text x="115" y="56.3" font-size="6.5" font-weight="800" fill="#fff" font-family="system-ui,sans-serif">LIVE</text>
+      </g></g>
+      <rect class="lv2-line" x="103" y="57" width="102" height="2" rx="1" fill="#fff"/>
+      <path d="M136 98l-6 10M172 98l6 10" stroke="#C9CED6" stroke-width="3" stroke-linecap="round"/>
     </g>
-    <g fill="none" stroke="#ff6b7a" stroke-width="2.4" stroke-linecap="round"><path class="lv-ir w1" d="M52 84a9 9 0 0 1 9-7"/><path class="lv-ir w2" d="M50 76a17 17 0 0 1 17-13"/><path class="lv-ir w3" d="M48 68a25 25 0 0 1 25-19"/></g>
-    <g transform="rotate(-30 36 120)">
-      <rect x="26" y="86" width="22" height="58" rx="8" fill="#22262d" stroke="#8a9099" stroke-width="2"/>
-      <circle class="lv-btn" cx="37" cy="97" r="4.2" fill="#D32436"/>
-      <g fill="#8a9099"><circle cx="32" cy="111" r="2"/><circle cx="42" cy="111" r="2"/><circle cx="32" cy="119" r="2"/><circle cx="42" cy="119" r="2"/></g>
-      <path d="M16 132c0-9 5-14 12-14h22c6 0 9 5 9 11v22H16z" fill="#b97f5c"/>
-      <rect class="lv-thumb" x="31" y="104" width="12" height="22" rx="6" fill="#d39a74"/>
-    </g></svg>`,
+    <g fill="none" stroke="#ff6b7a" stroke-width="2.2" stroke-linecap="round"><path class="lv2-ir" d="M90 66a6 6 0 0 1 0 8"/><path class="lv2-ir i2" d="M94 62a11 11 0 0 1 0 16"/><path class="lv2-ir i3" d="M98 58a16 16 0 0 1 0 24"/></g>
+    <rect x="8" y="76" width="26" height="66" rx="9" fill="#5c1a22" stroke="#7a2630" stroke-width="1.5"/>
+    <rect x="10" y="114" width="72" height="15" rx="6" fill="#6b1f28"/>
+    <rect x="12" y="128" width="6" height="16" fill="#3a1015"/><rect x="74" y="128" width="6" height="16" fill="#3a1015"/>
+    <g class="lv2-man">
+      <g class="lv2-arm2"><path d="M38 90l7 18 12 3" stroke="#9e1626" stroke-width="7" fill="none" stroke-linecap="round" stroke-linejoin="round"/><circle cx="58" cy="111" r="4" fill="#c58f6a"/></g>
+      <path d="M26 93q2-11 12-11h4q10 0 10 12l-2 26H26z" fill="#b51d2e"/>
+      <path d="M30 119h36" stroke="#1d2230" stroke-width="11" stroke-linecap="round"/>
+      <path d="M66 119l4 20" stroke="#1d2230" stroke-width="10" stroke-linecap="round"/>
+      <path d="M65 138h13a3 3 0 0 1 0 6H65z" fill="#0d0d10"/>
+      <rect x="36" y="76" width="7" height="8" rx="2" fill="#b97f5c"/>
+      <circle cx="40" cy="70" r="10" fill="#c58f6a"/>
+      <path d="M30 69a10 10 0 0 1 19-5c-5-3-10-3-14-1-3 1-4 3-5 6z" fill="#2a1a12"/>
+      <circle cx="50.5" cy="71" r="1.6" fill="#b97f5c"/><circle cx="45.5" cy="68.5" r="1.1" fill="#2a1a12"/>
+      <g class="lv2-arm"><path d="M42 90l14 12 16-4" stroke="#c42234" stroke-width="7" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+        <rect x="71" y="94" width="17" height="6.5" rx="2.6" fill="#22262d" stroke="#8a9099" stroke-width="1"/><circle class="lv2-btn" cx="85" cy="97.2" r="1.7"/>
+        <circle cx="72" cy="98" r="4" fill="#c58f6a"/></g>
+    </g>
+    <rect x="58" y="104" width="24" height="12" rx="6" fill="#7a2630"/>
+    </svg>`,
   movies: `<svg viewBox="0 0 220 150" class="sc sc-mov" aria-hidden="true"><defs>
     <linearGradient id="mvC" x1="0" x2="1"><stop offset="0" stop-color="#7a0f1a"/><stop offset=".25" stop-color="#D32436"/><stop offset=".5" stop-color="#8E121F"/><stop offset=".75" stop-color="#D32436"/><stop offset="1" stop-color="#7a0f1a"/></linearGradient>
     <linearGradient id="mvB" x1="0" y1="1" x2="0" y2="0"><stop offset="0" stop-color="#fff3c4" stop-opacity=".0"/><stop offset="1" stop-color="#fff3c4" stop-opacity=".75"/></linearGradient>
@@ -434,31 +460,32 @@ function renderHome() {
   const ui = S.acc.info || {};
   const exp = ui.exp_date ? new Date(ui.exp_date * 1000) : null;
   const cw = continueList();
-  const card = (key, title, sub, go, icon) => `<button class="tile hcard hc-${key}" data-go="${go}">
+  const card = (key, title, sub, go, icon) => `<button class="tile hcard hc-${key}" data-go="${go}" data-nav="${key}" data-rb>
       <span class="hc-tab"></span><span class="hc-t">${title}</span><span class="hc-scene">${icon}</span></button>`;
   app.innerHTML = `<div class="home home2 home3"><div class="hbg" id="hbg"></div>
     <div class="htop"><div class="hlogo"><img src="icon-192.png" alt=""><div><div class="w">ARAB <b>SAT</b></div><div class="ar">عرب سات</div></div></div>
-      <div class="hact"><button class="ibtn" data-go="#/search">${I.search}</button><button class="ibtn" id="rf">${I.refresh}</button><button class="ibtn" id="st">${I.gear}</button></div></div>
+      <div class="hact"><button class="ibtn" data-go="#/search" data-nav="srch" data-rb>${I.search}</button><button class="ibtn" id="rf" data-nav="rf" data-rb>${I.refresh}</button><button class="ibtn" id="st" data-nav="st" data-rb>${I.gear}</button></div></div>
     <div class="h3wrap"><div class="h3grid">
       ${card('live', 'Live TV', 'Channels', '#/live', SCN.live)}
       ${card('movies', 'Movies', 'Movies', '#/movies', SCN.movies)}
       ${card('series', 'Series', 'Series', '#/series', SCN.series)}
-      <div class="h3c h3wx" id="hwx"><div class="wxfx" id="wxfx"></div><div class="wxi">${WX.part}</div><div class="wxt"><b>--°</b><span class="wxs">Weather</span><span class="wxl">${HI.pin}<em>Locating…</em></span></div></div>
-      <div class="h3c h3clock"><div class="t"><span id="ckhm"></span><span class="sec" id="cks"></span><span class="ap" id="ckap"></span></div><div class="dw" id="cw"></div><div class="d" id="cd"></div><div class="secbar"><i id="ckbar"></i></div></div>
-      <button class="h3c h3new" data-go="#/new"><i class="spk s1">${SPARK}</i><i class="spk s2">${SPARK}</i><i class="spk s3">${SPARK}</i><span class="hn-badge">NEW</span><span class="hn-txt"><b>New Releases</b><span>Latest movies &amp; series</span></span><span class="hn-arr">&#8250;</span></button>
+      <div class="h3c h3wx" id="hwx" data-rb><div class="wxfx" id="wxfx"></div><div class="wxi">${WX.part}</div><div class="wxt"><b>--°</b><span class="wxs">Weather</span><span class="wxl">${HI.pin}<em>Locating…</em></span></div></div>
+      <div class="h3c h3clock" data-rb><div class="t"><span id="ckhm"></span><span class="sec" id="cks"></span><span class="ap" id="ckap"></span></div><div class="dw" id="cw"></div><div class="d" id="cd"></div><div class="secbar"><i id="ckbar"></i></div></div>
+      <button class="h3c h3new" data-go="#/new" data-nav="new" data-rb><i class="spk s1">${SPARK}</i><i class="spk s2">${SPARK}</i><i class="spk s3">${SPARK}</i><span class="hn-badge">NEW</span><span class="hn-txt"><b>New Releases</b><span>Latest movies &amp; series</span></span><span class="hn-arr">&#8250;</span></button>
     </div>
     <div class="h3bot"><span class="h3b1"></span>
       <div class="h3info">
-        <div class="h3row h3exp"><span class="h3ico">${CAL}</span><span class="h3lab">Expiration Date</span><b>${exp ? exp.toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' }) : (ui.username ? 'Unlimited' : '-')}</b></div>
-        <div class="h3row h3sup"><span class="h3ico">${I.phone}</span><span class="h3lab">Customer Service<br><b class="hc-num">${SUPPORT.show}</b></span>
+        <div class="h3row h3exp" data-rb><span class="h3ico">${CAL}</span><span class="h3lab">Expiration Date</span><b>${exp ? exp.toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' }) : (ui.username ? 'Unlimited' : '-')}</b></div>
+        <div class="h3row h3sup" data-rb><span class="h3ico">${I.phone}</span><span class="h3lab">Customer Service<br><b class="hc-num">${SUPPORT.show}</b></span>
           <span class="hcontact"><a class="hc-btn hc-call" href="tel:${SUPPORT.tel}" aria-label="Call">${I.phone}<em>Call</em></a>
           <a class="hc-btn hc-wa" href="https://wa.me/${SUPPORT.wa}" target="_blank" rel="noopener" aria-label="WhatsApp">${I.wa}<em>WhatsApp</em></a></span></div>
       </div>
-      <div class="h3cw2">${cw.length ? `<div class="cwl"><i class="cwdot"></i>Continue Watching</div><div class="cwr">${cw.slice(0, 3).map((c, k) => { const pr = Math.min(1, c.t / c.d); return `
-        <button class="cwc${k ? '' : ' big'}" data-cw="${esc(c.id)}" title="${esc(c.title)}" style="--p:${(289 * (1 - pr)).toFixed(1)};--d:${k * 0.15}s">
-          <span class="halo"></span><span class="pic" style="background-image:url('${esc(img(c.img))}')"></span>
-          <svg class="ring" viewBox="0 0 100 100"><circle class="trk" cx="50" cy="50" r="46"/><circle class="prg" cx="50" cy="50" r="46"/></svg>
-          <span class="pl">${I.play}</span><span class="nm" dir="auto">${esc(c.title)}</span></button>`; }).join('')}</div>` : ''}</div>
+      <div class="h3cw2">${cw.length ? `<div class="cwl"><i class="cwdot"></i>Continue Watching</div>
+        <button class="cwo" id="cwo" data-nav="cw" data-rb aria-label="Continue Watching"><span class="halo"></span><span class="ov">
+          ${cw.slice(0, 4).map((c, k) => `<span class="sl${k ? '' : ' on'}" data-cw="${esc(c.id)}"><span class="pic" style="background-image:url('${esc(img(c.img))}')"></span>
+            <span class="sh"></span><span class="pl">${I.play}</span><span class="tx"><b dir="auto">${esc(c.title)}</b><em>${Math.max(1, Math.round((c.d - c.t) / 60))} min left</em></span>
+            <span class="bar"><i style="width:${Math.min(100, c.t / c.d * 100).toFixed(1)}%"></i></span></span>`).join('')}
+          </span>${cw.length > 1 ? `<span class="dots">${cw.slice(0, 4).map((_, k) => `<i class="${k ? '' : 'on'}"></i>`).join('')}</span>` : ''}</button>` : ''}</div>
     </div>
     </div></div>`;
   const tick = () => { const n = new Date(); const t = $('#ckhm'); if (!t) return;
@@ -472,7 +499,13 @@ function renderHome() {
   tick(); const iv = setInterval(tick, 1000); onLeave(() => clearInterval(iv));
   $('#st').onclick = openSettings;
   $('#rf').onclick = () => { S.mem = {}; toast('Lists refreshed'); refreshAccount(); renderHome(); };
-  $$('[data-cw]').forEach(b => b.onclick = () => resumeItem(cw.find(c => String(c.id) === b.dataset.cw)));
+  const cwo = $('#cwo');
+  if (cwo) {
+    const sl = $$('.sl', cwo), dt = $$('.dots i', cwo); let ci = 0;
+    cwo.onclick = () => { const id = sl[ci].dataset.cw; resumeItem(cw.find(c => String(c.id) === id)); };
+    if (sl.length > 1) { const civ = setInterval(() => { sl[ci].classList.remove('on'); if (dt[ci]) dt[ci].classList.remove('on'); ci = (ci + 1) % sl.length; sl[ci].classList.add('on'); if (dt[ci]) dt[ci].classList.add('on'); }, 4500); onLeave(() => clearInterval(civ)); }
+  }
+  homeRubber(app);
   loadWeather();
   // counts + a blurred movie poster behind everything
   cached('all_v', { action: 'get_vod_streams' }).then(a => {
@@ -1193,6 +1226,65 @@ async function renderNew() {
 }
 
 /* ---------------- keyboard / remote navigation (arrows move the focus, Enter opens) ---------------- */
+
+/* ---------------- home: arrow-key map + rubber stretch ---------------- */
+const HOME_MAP_WIDE = {
+  srch: { ArrowRight: 'rf', ArrowDown: 'series' }, rf: { ArrowLeft: 'srch', ArrowRight: 'st', ArrowDown: 'series' }, st: { ArrowLeft: 'rf', ArrowDown: 'series' },
+  live: { ArrowRight: 'movies', ArrowUp: 'srch' }, movies: { ArrowLeft: 'live', ArrowRight: 'series', ArrowUp: 'rf' },
+  series: { ArrowLeft: 'movies', ArrowUp: 'st', ArrowDown: 'new' }, new: { ArrowUp: 'series', ArrowDown: 'cw' }, cw: { ArrowUp: 'new' },
+};
+const HOME_MAP_PHONE = {
+  srch: { ArrowRight: 'rf', ArrowDown: 'live' }, rf: { ArrowLeft: 'srch', ArrowRight: 'st', ArrowDown: 'live' }, st: { ArrowLeft: 'rf', ArrowDown: 'live' },
+  live: { ArrowUp: 'st', ArrowDown: 'movies' }, movies: { ArrowUp: 'live', ArrowDown: 'series' }, series: { ArrowUp: 'movies', ArrowDown: 'new' },
+  new: { ArrowUp: 'series', ArrowDown: 'cw' }, cw: { ArrowUp: 'new' },
+};
+function homeNav(dir) {
+  const home = document.querySelector('.home3'); if (!home || document.querySelector('.sheet-bg') || fpEl) return false;
+  const map = isWide() ? HOME_MAP_WIDE : HOME_MAP_PHONE;
+  const cur = document.activeElement && document.activeElement.closest && document.activeElement.closest('[data-nav]');
+  if (!cur || !home.contains(cur)) { const f = home.querySelector('[data-nav="live"]'); if (f) f.focus({ preventScroll: true }); return true; }
+  const to = (map[cur.dataset.nav] || {})[dir];
+  const el = to && home.querySelector(`[data-nav="${to}"]`);
+  if (el) el.focus({ preventScroll: true }); else rubber(cur, dir);
+  return true;
+}
+function rubber(el, dir) {
+  const v = { ArrowRight: [1, 0], ArrowLeft: [-1, 0], ArrowDown: [0, 1], ArrowUp: [0, -1] }[dir]; if (!v || !el.animate) return;
+  const [x, y] = v, ax = Math.abs(x), ay = Math.abs(y);
+  el.style.transformOrigin = x > 0 ? 'left center' : x < 0 ? 'right center' : y > 0 ? 'center top' : 'center bottom';
+  const k = [{ translate: '0px 0px', scale: '1 1' },
+    { translate: `${x * 10}px ${y * 8}px`, scale: `${1 + ax * .08} ${1 + ay * .12}`, offset: .28 },
+    { translate: `${-x * 3}px ${-y * 2}px`, scale: `${1 - ax * .025} ${1 - ay * .035}`, offset: .6 },
+    { translate: `${x * 1}px ${y * 1}px`, scale: `${1 + ax * .008} ${1 + ay * .01}`, offset: .82 },
+    { translate: '0px 0px', scale: '1 1' }];
+  const a = el.animate(k, { duration: 560, easing: 'ease-out' });
+  a.onfinish = () => { el.style.transformOrigin = ''; };
+}
+function homeRubber(root) {
+  if (!window.PointerEvent) return;
+  $$('[data-rb]', root).forEach(el => {
+    let id = null, sx = 0, sy = 0, moved = false;
+    const res = (d) => d * 0.42 / (1 + Math.abs(d) / 220);
+    el.addEventListener('pointerdown', (e) => { if (e.pointerType !== 'touch') return; id = e.pointerId; sx = e.clientX; sy = e.clientY; moved = false; el.getAnimations && el.getAnimations().forEach(a => { if (a.effect && a.effect.getKeyframes && a.effect.getKeyframes().some(f => f.translate)) a.cancel(); }); });
+    el.addEventListener('pointermove', (e) => {
+      if (e.pointerId !== id) return;
+      const dx = e.clientX - sx, dy = e.clientY - sy; if (!moved && Math.hypot(dx, dy) < 6) return;
+      moved = true; const r = el.getBoundingClientRect(), tx = res(dx), ty = res(dy);
+      el.style.transformOrigin = `${dx > 0 ? 'left' : 'right'} ${dy > 0 ? 'top' : 'bottom'}`;
+      el.style.translate = `${tx * .55}px ${ty * .55}px`;
+      el.style.scale = `${1 + Math.abs(tx) / r.width * .9} ${1 + Math.abs(ty) / r.height * .9}`;
+    });
+    const end = (e) => {
+      if (e.pointerId !== id) return; id = null; if (!moved) return;
+      const from = { translate: el.style.translate || '0px 0px', scale: el.style.scale || '1 1' };
+      el.style.translate = ''; el.style.scale = '';
+      const a = el.animate([from, { translate: '0px 0px', scale: '1 1' }], { duration: 650, easing: 'cubic-bezier(.25,1.8,.45,1)' });
+      a.onfinish = () => { el.style.transformOrigin = ''; };
+    };
+    el.addEventListener('pointerup', end); el.addEventListener('pointercancel', end);
+    el.addEventListener('click', (e) => { if (moved) { moved = false; e.preventDefault(); e.stopImmediatePropagation(); } }, true);
+  });
+}
 const NAV_SEL = '.chc,.pbig,.tile,.cat,.row,.pc,.ep,.cw,.ibtn,.catbtn,.newbtn,.chip,.btn,.srv,.input,.star.on';
 function navCandidates() {
   let scope = document;
@@ -1226,6 +1318,7 @@ function navMove(dir) {
     if (sc < bs) { bs = sc; best = el; }
   }
   if (best) { best.focus({ preventScroll: true }); best.scrollIntoView({ block: 'nearest', inline: 'nearest' }); }
+  else rubber(cur, dir);
 }
 document.addEventListener('keydown', (e) => {
   if (e.defaultPrevented || e.altKey || e.ctrlKey || e.metaKey) return;
@@ -1234,7 +1327,7 @@ document.addEventListener('keydown', (e) => {
   if (['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'].includes(e.key)) {
     if (typing && (e.key === 'ArrowLeft' || e.key === 'ArrowRight')) return;
     if (t && t.tagName === 'VIDEO') return;
-    e.preventDefault(); navMove(e.key); document.body.classList.add('kbd');
+    e.preventDefault(); document.body.classList.add('kbd'); if (!homeNav(e.key)) navMove(e.key);
   } else if (e.key === 'Enter' && t && !typing && t.matches && t.matches('.row,.cw,.pc,.ep,.tile,.chc') && t.tagName !== 'BUTTON') { e.preventDefault(); t.click(); }
   else if ((e.key === 'Escape' || e.key === 'Backspace') && !typing && !document.querySelector('.livebox.tv')) {
     const sh = document.querySelector('.sheet-bg'); if (sh) { sh.remove(); return; }
