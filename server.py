@@ -305,6 +305,8 @@ class Handler(SimpleHTTPRequestHandler):
                 return self.play(url.path)
             if url.path.startswith("/px/"):
                 return self.proxy_stream(url.path)
+            if url.path.startswith("/x/"):
+                return self.xtream_gateway(url)
         except ValueError:
             return self.send_json({"error": "bad request"}, 400)
         except Exception as e:  # noqa
@@ -612,6 +614,66 @@ class Handler(SimpleHTTPRequestHandler):
         if key and len(data) > 2:
             cache_put(key, data)
         return self.send_json(None, raw=data)
+
+    def xtream_gateway(self, url):
+        """Xtream-compatible gateway for the Android app: /x/<s>/player_api.php etc.
+        API / EPG calls are fetched here (the panel address stays hidden); streams
+        (/live, /movie, /series, /timeshift ...) are redirected straight to the panel."""
+        parts = url.path.split("/", 3)
+        if len(parts) < 4 or not parts[3]:
+            raise ValueError("bad gateway path")
+        s, rest = parts[2], parts[3]
+        host = self.server_host(s)
+        target = host + "/" + rest + ("?" + url.query if url.query else "")
+        if rest not in ("player_api.php", "xmltv.php", "get.php", "panel_api.php"):
+            self.send_response(302)
+            self.send_header("Location", target)
+            self.send_header("Cache-Control", "no-store")
+            self.send_header("Content-Length", "0")
+            self.end_headers()
+            return
+        req = urllib.request.Request(target, headers={"User-Agent": self.headers.get("User-Agent") or UA})
+        try:
+            r = urllib.request.urlopen(req, timeout=90)
+        except urllib.error.HTTPError as e:
+            self.send_response(e.code)
+            self.send_header("Content-Length", "0")
+            self.end_headers()
+            return
+        except Exception:
+            return self.send_json({"error": "Server not reachable"}, 504)
+        q = dict(urllib.parse.parse_qsl(url.query))
+        if rest == "player_api.php" and not q.get("action"):
+            # login answer: hide the panel address it carries in server_info
+            try:
+                raw = r.read()
+                if r.headers.get("Content-Encoding") == "gzip":
+                    raw = gzip.decompress(raw)
+                j = json.loads(raw)
+                if isinstance(j, dict) and isinstance(j.get("server_info"), dict):
+                    me = (self.headers.get("Host") or "").split(":")[0]
+                    j["server_info"].update({"url": me, "port": "80", "https_port": "443", "server_protocol": "http"})
+                return self.send_json(j)
+            except Exception:
+                return self.send_json({"error": "Bad answer from server"}, 502)
+            finally:
+                r.close()
+        self.send_response(r.status)
+        for h in ("Content-Type", "Content-Length", "Content-Encoding"):
+            if r.headers.get(h):
+                self.send_header(h, r.headers[h])
+        self.send_header("Cache-Control", "no-store")
+        self.end_headers()
+        try:
+            while True:
+                chunk = r.read(64 * 1024)
+                if not chunk:
+                    break
+                self.wfile.write(chunk)
+        except Exception:
+            pass
+        finally:
+            r.close()
 
     def proxy_stream(self, path):
         """Streams a live channel through this server (used when a phone can't open the stream directly)."""
