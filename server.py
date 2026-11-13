@@ -359,9 +359,19 @@ class Handler(SimpleHTTPRequestHandler):
                        "lat": j.get("lat"), "lon": j.get("lon")}
         except Exception:
             pass
+        if not out:
+            try:   # backup service
+                with urllib.request.urlopen("https://ipwho.is/%s" % urllib.parse.quote(ip), timeout=8) as r:
+                    j = json.loads(r.read())
+                if j.get("success"):
+                    out = {"city": j.get("city"), "region": j.get("region"), "country": j.get("country"), "cc": j.get("country_code"),
+                           "lat": j.get("latitude"), "lon": j.get("longitude")}
+            except Exception:
+                pass
         if len(GEO) > 2000:
             GEO.clear()
-        GEO[ip] = (time.time(), out)
+        # a failed lookup is only remembered for 2 minutes, so it is retried soon
+        GEO[ip] = (time.time() - (6 * 3600 - 120 if not out else 0), out)
         return self.send_json(out)
 
     # ---------- device activation ----------
