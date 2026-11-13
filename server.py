@@ -249,6 +249,15 @@ class Handler(SimpleHTTPRequestHandler):
         return servers[i]["host"].rstrip("/")
 
     # ---------- routes ----------
+    def do_HEAD(self):
+        if urllib.parse.urlparse(self.path).path in ("/apk", "/android", "/app"):
+            self.send_response(302)
+            self.send_header("Location", "/ArabeskTV.apk")
+            self.send_header("Content-Length", "0")
+            self.end_headers()
+            return
+        return super().do_HEAD()
+
     def do_GET(self):
         url = urllib.parse.urlsplit(self.path)
         try:
