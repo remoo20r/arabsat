@@ -9,3 +9,4 @@ android/app/build/
 android/.gradle/
 *.keystore
 *.jks
+codes_used.json

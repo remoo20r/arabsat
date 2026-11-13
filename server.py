@@ -155,12 +155,34 @@ def sess_get(sid):
     return None
 
 
+USED_FILE = os.path.join(ROOT, "codes_used.json")
+
+
+def used_codes(d=None):
+    """Every code ever handed out — a code is never given to a second device."""
+    try:
+        with open(USED_FILE, encoding="utf-8") as f:
+            used = set(json.load(f))
+    except Exception:
+        used = set()
+    if d:
+        used.update(d.keys())
+    return used
+
+
 def make_code(d, extra=None):
-    """Create a new device code inside activations dict d (caller holds _act_lock)."""
-    for _ in range(50):
+    """Create a new device code inside activations dict d (caller holds _act_lock).
+    The code is unique forever: not in use now and never used before."""
+    used = used_codes(d)
+    while True:
         code = "%06d" % secrets.randbelow(1000000)
-        if code not in d and code[0] != "0":
+        if code[0] != "0" and code not in used:
             break
+    used.add(code)
+    tmp = USED_FILE + ".tmp"
+    with open(tmp, "w", encoding="utf-8") as f:
+        json.dump(sorted(used), f)
+    os.replace(tmp, USED_FILE)
     rec = {"sec": secrets.token_urlsafe(18), "ts": int(time.time())}
     rec.update(extra or {})
     d[code] = rec
@@ -526,6 +548,30 @@ class Handler(SimpleHTTPRequestHandler):
             if not key or not hmac.compare_digest(self.headers.get("X-Key", ""), key):
                 return self.send_json({"error": "not found"}, 404)
             return self.send_json({"logs": list(LOGS)})
+        if url.path == "/api/codeinfo":   # owner (Telegram mini app): look a device code up
+            key = activate_key()
+            if not key or not hmac.compare_digest(self.headers.get("X-Key", ""), key):
+                return self.send_json({"error": "not found"}, 404)
+            try:
+                body = json.loads(self.rfile.read(int(self.headers.get("Content-Length", "0") or 0)) or b"{}")
+            except Exception:
+                body = {}
+            code = re.sub(r"\D", "", str(body.get("code", "")))
+            rec = act_load().get(code)
+            if not rec:
+                return self.send_json({"found": False, "code": code})
+            s = rec.get("s")
+            name = ""
+            if s is not None:
+                if str(s).startswith("c"):
+                    name = rec.get("name") or "Custom server"
+                else:
+                    sv = load_servers()
+                    name = sv[int(s)]["name"] if int(s) < len(sv) else ""
+            return self.send_json({"found": True, "code": code, "activated": bool(rec.get("u")),
+                                   "username": rec.get("u") or "", "server": name,
+                                   "device": "Android app" if rec.get("aid") else ("iPhone / web (Face ID)" if rec.get("pk") else "web"),
+                                   "created": rec.get("ts", 0), "activated_at": rec.get("at", 0)})
         if url.path.startswith("/api/pk/"):
             return self.pk_post(url.path)
         if url.path != "/api/activate":
