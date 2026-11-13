@@ -86,7 +86,13 @@ def activate_key():
 def xtream_login(host, user, pw):
     q = urllib.parse.urlencode({"username": user, "password": pw})
     req = urllib.request.Request(host + "/player_api.php?" + q, headers={"User-Agent": UA})
-    with urllib.request.urlopen(req, timeout=30) as r:
+    try:
+        r = urllib.request.urlopen(req, timeout=30)
+    except urllib.error.HTTPError as e:
+        if e.code in (401, 403, 404):
+            return False, {}
+        raise
+    with r:
         data = r.read()
         if r.headers.get("Content-Encoding") == "gzip":
             data = gzip.decompress(data)
@@ -276,6 +282,8 @@ class Handler(SimpleHTTPRequestHandler):
                 if r.headers.get("Content-Encoding") == "gzip":
                     data = gzip.decompress(data)
         except urllib.error.HTTPError as e:
+            if not action and e.code in (401, 403, 404):  # some panels answer a wrong login this way
+                return self.send_json({"user_info": {"auth": 0}})
             return self.send_json({"error": "upstream %d" % e.code}, 502)
         except Exception:
             return self.send_json({"error": "Server not reachable"}, 504)
