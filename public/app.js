@@ -112,7 +112,7 @@ const AR = {
   'Active until': 'الاشتراك لحد', 'Expiration Date': 'تاريخ انتهاء الاشتراك', 'Customer Service': 'خدمة العملاء', 'Call': 'اتصال', 'WhatsApp': 'واتساب', 'Clear sky': 'السما صافية', 'Clear night': 'ليل صافي', 'Partly cloudy': 'غيوم خفيفة', 'Cloudy': 'غايم', 'Foggy': 'شبورة', 'Rainy': 'مطر', 'Snowy': 'تلج', 'Thunderstorm': 'عاصفة رعدية', 'Weather': 'الطقس', 'Locating…': 'بنحدد مكانك…', 'Unlimited': 'غير محدود', 'My Account': 'حسابي', 'Activation code': 'كود التفعيل', 'Username': 'اليوزرنيم',
   'Server': 'السيرفر', 'Status': 'الحالة', 'Expires': 'ينتهي', 'Connections': 'الأجهزة', 'Settings': 'الإعدادات', 'Appearance': 'الشكل',
   'Language': 'اللغة', '🌙 Dark': '🌙 داكن', '☀️ Light': '☀️ فاتح', 'Clear watch history': 'امسح سجل المشاهدة', 'Call': 'اتصال', 'WhatsApp': 'واتساب',
-  'Active': 'شغال', 'Expired': 'منتهي', 'Banned': 'موقوف', 'Disabled': 'متوقف', 'LIVE': 'مباشر', 'NOW': 'الآن', 'NEXT': 'التالي', 'Loading program info…': 'جاري تحميل البرنامج…', 'Program guide': 'جدول البرامج',
+  'Active': 'شغال', 'Expired': 'منتهي', 'Banned': 'موقوف', 'Disabled': 'متوقف', 'LIVE': 'مباشر', 'NOW': 'الآن', '★ Added to favorites': '★ اتضافت للمفضلة', 'Removed from favorites': 'اتشالت من المفضلة', 'No favorites yet. Hold OK on a channel to add it.': 'مفيش مفضلة لسه. دوس OK ضغطة طويلة على أي قناة علشان تضيفها.', 'No favorites yet. Hold OK on a movie to add it.': 'مفيش مفضلة لسه. دوس OK ضغطة طويلة على أي فيلم علشان تضيفه.', 'No favorites yet. Hold OK on a series to add it.': 'مفيش مفضلة لسه. دوس OK ضغطة طويلة على أي مسلسل علشان تضيفه.', 'NEXT': 'التالي', 'Loading program info…': 'جاري تحميل البرنامج…', 'Program guide': 'جدول البرامج',
   'No program info': 'مفيش بيانات للبرنامج', 'No program guide for this channel': 'مفيش جدول برامج للقناة دي', 'No channels here': 'مفيش قنوات هنا',
   'Nothing here yet': 'لسه مفيش حاجة هنا', 'No categories': 'مفيش أقسام', '★ Favorites': '★ المفضلة', 'Play': 'تشغيل', 'Watch again': 'شاهد تاني',
   'Start from the beginning': 'ابدأ من الأول', '✓ Watched': '✓ اتشاف', 'Last watched': 'آخر حاجة اتشافت', 'Next episode': 'الحلقة اللي بعدها',
@@ -772,9 +772,9 @@ async function renderLive(catId) {
   let cats;
   try { cats = await cached('lc', { action: 'get_live_categories' }); } catch (e) { $('#ll').innerHTML = empty(e.message); return; }
   const fav = favs('live');
-  const allCats = (fav.length ? [{ category_id: 'fav', category_name: '★ Favorites' }] : []).concat(cats);
+  const allCats = [{ category_id: 'fav', category_name: '★ Favorites' }].concat(cats);   // Favorites is always the first category
   if (!catId) catId = store.get('lastLiveCat_' + acckey(), null);
-  if (!allCats.some(c => String(c.category_id) === String(catId))) catId = allCats.length ? allCats[0].category_id : null;
+  if (!allCats.some(c => String(c.category_id) === String(catId))) catId = fav.length || !cats.length ? 'fav' : cats[0].category_id;
   const video = $('#lv'), lbx = $('#lbx');
   let current = null, list = [], playList = [], tvCat = null, hideT = null, tvList = [];
   onLeave(() => { stopVideo(video); document.removeEventListener('keydown', onKey, true); clearTimeout(hideT); document.body.classList.remove('tvon'); });
@@ -790,7 +790,7 @@ async function renderLive(catId) {
     store.set('lastLiveCat_' + acckey(), cid);
     $('#ll').innerHTML = spinner();
     try { list = sortList(await getList(cid)); } catch (e) { $('#ll').innerHTML = empty(e.message); return; }
-    if (!list.length) { $('#ll').innerHTML = empty('No channels here'); return; }
+    if (!list.length) { $('#ll').innerHTML = empty(cid === 'fav' ? 'No favorites yet. Hold OK on a channel to add it.' : 'No channels here'); return; }
     renderRows($('#ll'), list, 0, false);
   }
   const logo = (c) => { const lg = img(c.stream_icon);
@@ -945,6 +945,15 @@ async function renderLive(catId) {
     } else showOSD();   // any other button: show the info bar
   }
   document.addEventListener('keydown', onKey, true);
+  S.favHook = (el) => {
+    const inTv = !!el.closest('#tvchs'); if (!el.closest('#ll') && !inTv) return false;
+    const arr = inTv ? tvList : list; const c = arr[+el.dataset.i]; if (!c) return false;
+    const on = toggleFav('live', { id: c.stream_id, raw: c });
+    $$('.chc,.row').forEach(r => { const a = r.closest('#tvchs') ? tvList : list; const x = a[+r.dataset.i];
+      if (x && x.stream_id == c.stream_id) { const st = r.querySelector('[data-f]'); if (st) { st.classList.toggle('on', on); st.innerHTML = on ? I.star : I.starO; } r.classList.toggle('isfav', on); } });
+    favToast(on, c.name); return true;
+  };
+  onLeave(() => { S.favHook = null; });
   if (catId != null) loadCat(String(catId));
 }
 
@@ -1200,10 +1209,10 @@ async function renderGridSection(kind, catId) {
   catch (e) { $('#gw').innerHTML = empty(e.message); return; }
   const fkind = isV ? 'movie' : 'series';
   const fav = favs(fkind);
-  const allCats = (fav.length ? [{ category_id: 'fav', category_name: '★ Favorites' }] : []).concat(cats);
+  const allCats = [{ category_id: 'fav', category_name: '★ Favorites' }].concat(cats);   // Favorites is always the first category
   const ck = 'lastCat_' + kind + '_' + acckey();
   if (!catId) catId = store.get(ck, null);
-  if (!allCats.some(c => String(c.category_id) === String(catId))) catId = allCats.length ? allCats[0].category_id : null;
+  if (!allCats.some(c => String(c.category_id) === String(catId))) catId = fav.length || !cats.length ? 'fav' : cats[0].category_id;
   wireSide(allCats, catId, (c) => load(c));
   async function load(cid) {
     store.set(ck, cid);
@@ -1213,6 +1222,7 @@ async function renderGridSection(kind, catId) {
       if (cid === 'fav') items = favs(fkind).map(f => f.raw);
       else items = await cached((isV ? 'vs_' : 'ss_') + cid, { action: isV ? 'get_vod_streams' : 'get_series', category_id: cid });
     } catch (e) { $('#gw').innerHTML = empty(e.message); return; }
+    if (cid === 'fav' && !items.length) { $('#gw').innerHTML = empty(isV ? 'No favorites yet. Hold OK on a movie to add it.' : 'No favorites yet. Hold OK on a series to add it.'); window.scrollTo(0, 0); return; }
     posterGrid($('#gw'), items, isV);
     window.scrollTo(0, 0);
   }
@@ -1223,7 +1233,7 @@ function posterCard(it, isV) {
   const pic = img(isV ? it.stream_icon : it.cover);
   const r = parseFloat(it.rating_5based || 0) ? (parseFloat(it.rating_5based) * 2).toFixed(1) : (parseFloat(it.rating) ? parseFloat(it.rating).toFixed(1) : '');
   return `<button class="pc" data-go="${isV ? '#/movie/' : '#/show/'}${esc(id)}">
-    <div class="po" ${pic ? `style="background-image:url('${esc(pic)}')"` : ''}>${pic ? '' : `<div class="ph" dir="auto">${esc(it.name)}</div>`}${r && r !== '0.0' ? `<span class="rt">★ ${r}</span>` : ''}</div>
+    <div class="po" ${pic ? `style="background-image:url('${esc(pic)}')"` : ''}>${pic ? '' : `<div class="ph" dir="auto">${esc(it.name)}</div>`}<span class="pfav ${isFav(isV ? 'movie' : 'series', id) ? 'on' : ''}">★</span>${r && r !== '0.0' ? `<span class="rt">★ ${r}</span>` : ''}</div>
     ${isV ? (() => { const st = progState('m' + id); if (st === 'done') return '<span class="pmark done">✓</span>'; const pr = progAll()['m' + id]; return st === 'part' ? `<i class="pprog"><b style="width:${Math.min(100, pr.t / pr.d * 100)}%"></b></i>` : ''; })() : ''}
     <div class="t" dir="auto">${esc(it.name)}</div></button>`;
 }
@@ -1231,7 +1241,8 @@ function posterGrid(el, items, isV) {
   if (!items || !items.length) { el.innerHTML = empty('Nothing here yet'); return; }
   el.innerHTML = '<div class="grid"></div><div class="sent" style="height:40px"></div>';
   const g = $('.grid', el); let n = 0;
-  const more = () => { g.insertAdjacentHTML('beforeend', items.slice(n, n + PAGE).map(i => posterCard(i, isV)).join('')); n += PAGE; if (n >= items.length) io.disconnect(); };
+  g._items = items; g._isV = isV;
+  const more = () => { g.insertAdjacentHTML('beforeend', items.slice(n, n + PAGE).map((i, k) => posterCard(i, isV).replace('<button class="pc"', `<button class="pc" data-i="${n + k}"`)).join('')); n += PAGE; if (n >= items.length) io.disconnect(); };
   const io = new IntersectionObserver((en) => { if (en[0].isIntersecting) more(); }, { rootMargin: '600px' });
   more(); io.observe($('.sent', el)); onLeave(() => io.disconnect());
 }
@@ -1477,6 +1488,46 @@ function navMove(dir) {
   if (best) { try { best.focus({ preventScroll: true, focusVisible: true }); } catch (e) { best.focus({ preventScroll: true }); } best.scrollIntoView({ block: 'nearest', inline: 'nearest' }); }
   else rubber(cur, dir);
 }
+/* ---------------- hold OK (or long press / right click) = add to favorites ---------------- */
+function favToast(on, name) { const ar = prefs().lang === 'ar'; toast((on ? (ar ? '★ اتضافت للمفضلة' : '★ Added to favorites') : (ar ? 'اتشالت من المفضلة' : 'Removed from favorites')) + (name ? ': ' + name : '')); }
+function favToggleEl(el) {
+  if (S.favHook && S.favHook(el)) return true;
+  const pc = el.closest('.pc'); const g = pc && pc.closest('.grid');
+  if (pc && g && g._items) {
+    const it = g._items[+pc.dataset.i]; if (!it) return false;
+    const isV = (pc.dataset.go || '').startsWith('#/movie/');
+    const kind = isV ? 'movie' : 'series', id = isV ? it.stream_id : it.series_id;
+    const raw = isV ? { stream_id: it.stream_id, name: it.name, stream_icon: it.stream_icon, rating: it.rating, rating_5based: it.rating_5based }
+                    : { series_id: it.series_id, name: it.name, cover: it.cover, rating: it.rating, rating_5based: it.rating_5based };
+    const on = toggleFav(kind, { id, raw });
+    const b = pc.querySelector('.pfav'); if (b) b.classList.toggle('on', on);
+    favToast(on, it.name); return true;
+  }
+  return false;
+}
+const FAV_SEL = '.chc,.row,.pc';
+let lp = { t: null, el: null, done: false };
+document.addEventListener('keydown', (e) => {
+  if (e.key !== 'Enter' && e.keyCode !== 13) return;
+  const t = document.activeElement;
+  if (!t || !t.matches || !t.matches(FAV_SEL) || !(t.closest('#ll') || t.closest('#tvchs') || t.closest('.grid'))) return;
+  if (document.querySelector('.livebox.tv:not(.panel)')) return;   // full-screen channel: OK opens the list
+  e.preventDefault(); e.stopImmediatePropagation();
+  if (e.repeat || lp.el) return;
+  lp = { el: t, done: false, t: setTimeout(() => { lp.done = true; favToggleEl(t); }, 700) };
+}, true);
+document.addEventListener('keyup', (e) => {
+  if ((e.key !== 'Enter' && e.keyCode !== 13) || !lp.el) return;
+  e.preventDefault(); clearTimeout(lp.t); const t = lp.el, done = lp.done; lp = { t: null, el: null, done: false };
+  if (!done && t.isConnected) t.click();
+}, true);
+// mouse / touch: long press or right click
+let lpP = null;
+document.addEventListener('pointerdown', (e) => { const t = e.target.closest && e.target.closest(FAV_SEL); if (!t || e.button !== 0) return;
+  clearTimeout(lpP); lpP = setTimeout(() => { if (favToggleEl(t)) { const stop = (ev) => { ev.preventDefault(); ev.stopImmediatePropagation(); }; t.addEventListener('click', stop, { capture: true, once: true }); setTimeout(() => t.removeEventListener('click', stop, true), 800); } }, 700); });
+['pointerup', 'pointercancel', 'pointerleave'].forEach(n => document.addEventListener(n, () => clearTimeout(lpP)));
+document.addEventListener('contextmenu', (e) => { const t = e.target.closest && e.target.closest(FAV_SEL); if (t && favToggleEl(t)) e.preventDefault(); });
+
 document.addEventListener('keydown', (e) => {
   if (e.defaultPrevented || e.altKey || e.ctrlKey || e.metaKey) return;
   const t = e.target;

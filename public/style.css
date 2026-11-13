@@ -1229,3 +1229,9 @@ body.kbd #catq:focus{outline:none}
   .livebox.tv .tvosd{grid-template-columns:1fr;gap:10px;left:10px;right:10px;bottom:10px;padding:12px 14px}
   .tvosd .o-pg{border:0;padding:0}.tvosd .o-rt{display:none}.tvosd .o-no{font-size:22px;min-width:0}.tvosd .o-lg{width:64px;height:44px}
 }
+
+/* favorites star on posters (hold OK to add / remove) */
+.pc .po{position:relative}
+.pc .pfav{position:absolute;top:8px;left:8px;width:28px;height:28px;border-radius:50%;display:none;place-items:center;font-size:16px;line-height:1;
+  color:#1a0d00;background:linear-gradient(180deg,#F3D98B,#D4AF37);box-shadow:0 4px 12px rgba(0,0,0,.5)}
+.pc .pfav.on{display:grid}
