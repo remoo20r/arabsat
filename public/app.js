@@ -61,7 +61,7 @@ async function cached(key, params) {
   return p;
 }
 /* LG TV app: these channel groups are not offered on LG TVs at all (categories and channels whose names match) */
-const LG_BLOCK = /\b(osn|be\s?in|mbc|shahid|rotana|ssc|alkass|al\s?kass|ad\s?sports?|abu\s?dhabi\s?sports?|dubai\s?sports?|starz\w*|tod|orbit|art\s?(aflam|hekayat|cinema|movies)?|netflix|disney\w*|sky|nba|nfl|nhl|mlb|mls|ufc|wwe|fox|nbc|cbs|abc|espn|hbo|prime|dazn|eurosport|canal\+?|paramount|showtime|amc|discovery|nat\s?geo|national\s?geographic|nickelodeon|nick|cartoon|boomerang|cinemax|tnt|sports?|spor|esportes|deportes|thamanya|top\s+(series|classic|stories|moveis|movies)|power|majestic|magic|yes|ppv|vip|movies?|moveis|cinema|sinema|filmes|films?|premium|series)\b|بي\s?ان|ام\s?بي\s?سي|روتانا|شاهد|اوربت|أوربت|الثمانية|رياض|ماجيك/i;
+const LG_BLOCK = /\b(osn|be\s?in|mbc|shahid|rotana|ssc|alkass|al\s?kass|ad\s?sports?|abu\s?dhabi\s?sports?|dubai\s?sports?|starz\w*|tod|orbit|art\s?(aflam|hekayat|cinema|movies)?|netflix|disney\w*|sky|nba|nfl|nhl|mlb|mls|ufc|wwe|fox|nbc|cbs|abc|espn|hbo|prime|dazn|eurosport|canal\+?|paramount|showtime|amc|discovery|nat\s?geo|national\s?geographic|nickelodeon|nick|cartoon|boomerang|cinemax|tnt|sports?|spor|esportes|deportes|thamanya|top\s+(series|classic|stories|moveis|movies)|power|majestic|magic|yes|ppv|vip|movies?|moveis|cinema|sinema|filmes|films?|premium|series|carton|spacetoon|cn)\d*\b|بي\s?ان|ام\s?بي\s?سي|روتانا|شاهد|اوربت|أوربت|الثمانية|رياض|ماجيك/i;
 function isLGApp() { return !!store.get('tvid', null) || /Web0S|webOS/i.test(navigator.userAgent); }
 async function lgFilterLive(action, v) {
   if (!Array.isArray(v)) return v;
