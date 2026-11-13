@@ -282,6 +282,7 @@ function renderHome() {
   $$('[data-cw]').forEach(b => b.onclick = () => resumeItem(cw.find(c => String(c.id) === b.dataset.cw)));
   // warm the catalogs in the background
   cached('lc', { action: 'get_live_categories' }).catch(() => {});
+  if (window.ManagedMediaSource || window.MediaSource) loadMpegts().catch(() => {});
   cached('vc', { action: 'get_vod_categories' }).catch(() => {});
   cached('sc', { action: 'get_series_categories' }).catch(() => {});
   refreshAccount();
@@ -324,112 +325,229 @@ function openSettings() {
 }
 
 /* ---------------- live ---------------- */
+/* ---------------- side menu (categories): sidebar on big screens, drawer on phones ---------------- */
+const icoMenu = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M4 6h16M4 12h16M4 18h10"/></svg>';
+function sideLayout(title, extraBar) {
+  return `<div class="bar"><button class="ibtn" data-back>${I.back}</button><h1 dir="auto">${esc(title)}</h1>
+    <button class="catbtn" id="catbtn">${icoMenu}<span id="catname" dir="auto"></span></button>
+    <button class="ibtn" data-go="#/search">${I.search}</button>${extraBar || ''}</div>
+    <div class="sec"><div class="sideback" id="sideback"></div><aside class="side" id="side"><div class="side-h">Categories</div><div id="cats"></div></aside>
+    <main class="secmain" id="secmain"></main></div>`;
+}
+function wireSide(cats, current, onPick) {
+  const box = $('#cats'), side = $('#side'), back = $('#sideback');
+  const open = () => { side.classList.add('open'); back.classList.add('open'); };
+  const close = () => { side.classList.remove('open'); back.classList.remove('open'); };
+  $('#catbtn').onclick = () => side.classList.contains('open') ? close() : open();
+  back.onclick = close;
+  // swipe from the left edge opens the menu, swipe left closes it
+  let sx = null, sy = 0;
+  const ts = (e) => { const t = e.touches[0]; sx = t.clientX; sy = t.clientY; };
+  const te = (e) => { if (sx == null) return; const t = e.changedTouches[0]; const dx = t.clientX - sx, dy = Math.abs(t.clientY - sy);
+    if (dy < 60) { if (sx < 28 && dx > 60) open(); else if (dx < -60 && side.classList.contains('open')) close(); } sx = null; };
+  document.addEventListener('touchstart', ts, { passive: true }); document.addEventListener('touchend', te, { passive: true });
+  onLeave(() => { document.removeEventListener('touchstart', ts); document.removeEventListener('touchend', te); });
+  const draw = (cur) => {
+    box.innerHTML = cats.map(c => `<button class="cat ${String(c.category_id) === String(cur) ? 'on' : ''}" data-c="${esc(c.category_id)}" dir="auto">${esc(c.category_name)}</button>`).join('');
+    const c = cats.find(x => String(x.category_id) === String(cur)); $('#catname').textContent = c ? c.category_name : '';
+    const on = $('.cat.on', box); if (on) on.scrollIntoView({ block: 'nearest' });
+  };
+  box.onclick = (e) => { const b = e.target.closest('.cat'); if (!b) return; draw(b.dataset.c); close(); onPick(b.dataset.c); };
+  draw(current);
+  return { draw, open, close };
+}
+
+/* ---------------- live ---------------- */
+const isWide = () => window.matchMedia('(min-width: 900px)').matches;
 async function renderLive(catId) {
-  app.innerHTML = bar('Live TV', { search: true }) + `<div class="chips" id="chips"></div><div class="liveLayout">
-    <div class="livebox hidden" id="lbx"><div class="vwrap"><video id="lv" playsinline webkit-playsinline controls autoplay></video>
-      <div class="vmsg hidden" id="vm"></div></div>
-      <div class="nowbar"><span class="live">LIVE</span><div class="tx"><div id="nn" dir="auto"></div><small id="ne" dir="auto"></small></div>
-      <button class="ibtn" id="fs">${I.full}</button><button class="ibtn" id="xc">${I.close}</button></div></div>
-    <div class="list" id="ll">${spinner()}</div></div>`;
+  app.innerHTML = sideLayout('Live TV');
+  $('#secmain').innerHTML = `
+    <div class="livebox hidden" id="lbx">
+      <div class="vwrap" id="vwrap"><video id="lv" playsinline webkit-playsinline autoplay controls></video><div class="vmsg hidden" id="vm"></div>
+        <div class="tvtap" id="tvtap"></div>
+        <div class="tvtop"><button class="ibtn" id="tvx">${I.back}</button><div class="tx"><div class="nn" dir="auto"></div><small class="ne" dir="auto"></small></div><span class="live">LIVE</span></div>
+        <div class="tvpanel"><div class="tvcats" id="tvcats"></div><div class="tvchs" id="tvchs"></div></div>
+      </div>
+      <div class="nowbar"><span class="live">LIVE</span><div class="tx"><div class="nn" dir="auto"></div><small class="ne" dir="auto"></small></div>
+        <button class="ibtn" id="fs">${I.full}</button><button class="ibtn" id="xc">${I.close}</button></div></div>
+    <div class="list" id="ll">${spinner()}</div>`;
   let cats;
   try { cats = await cached('lc', { action: 'get_live_categories' }); } catch (e) { $('#ll').innerHTML = empty(e.message); return; }
   const fav = favs('live');
   const allCats = (fav.length ? [{ category_id: 'fav', category_name: '★ Favorites' }] : []).concat(cats);
   if (!catId) catId = store.get('lastLiveCat_' + acckey(), null);
   if (!allCats.some(c => String(c.category_id) === String(catId))) catId = allCats.length ? allCats[0].category_id : null;
-  $('#chips').innerHTML = allCats.map(c => `<button class="chip ${String(c.category_id) === String(catId) ? 'on' : ''}" data-c="${esc(c.category_id)}" dir="auto">${esc(c.category_name)}</button>`).join('');
-  const on = $('#chips .chip.on'); if (on) on.scrollIntoView({ inline: 'center', block: 'nearest' });
-  $$('#chips .chip').forEach(b => b.onclick = () => { $$('#chips .chip').forEach(x => x.classList.toggle('on', x === b)); loadCat(b.dataset.c); });
-  let current = null, list = [];
-  const video = $('#lv');
-  onLeave(() => stopVideo(video));
-  $('#xc').onclick = () => { stopVideo(video); $('#lbx').classList.add('hidden'); current = null; $$('.row.on').forEach(r => r.classList.remove('on')); };
-  $('#fs').onclick = () => goFull(video);
+  const video = $('#lv'), lbx = $('#lbx');
+  let current = null, list = [], playList = [], tvCat = null, hideT = null;
+  onLeave(() => { stopVideo(video); document.removeEventListener('keydown', onKey); clearTimeout(hideT); document.body.classList.remove('tvon'); });
+  const side = wireSide(allCats, catId, (c) => loadCat(c));
 
+  const getList = async (cid) => cid === 'fav' ? favs('live').map(f => f.raw) : cached('ls_' + cid, { action: 'get_live_streams', category_id: cid });
   async function loadCat(cid) {
     store.set('lastLiveCat_' + acckey(), cid);
     $('#ll').innerHTML = spinner();
-    try {
-      if (cid === 'fav') list = favs('live').map(f => f.raw);
-      else list = await cached('ls_' + cid, { action: 'get_live_streams', category_id: cid });
-    } catch (e) { $('#ll').innerHTML = empty(e.message); return; }
+    try { list = await getList(cid); } catch (e) { $('#ll').innerHTML = empty(e.message); return; }
     if (!list.length) { $('#ll').innerHTML = empty('No channels here'); return; }
-    renderRows(0);
+    renderRows($('#ll'), list, 0);
   }
-  function rowHTML(c, i) {
-    const lg = img(c.stream_icon);
-    return `<div class="row ${current && current.stream_id == c.stream_id ? 'on' : ''}" data-i="${i}">
-      <span class="no">${esc(c.num || i + 1)}</span>
-      <div class="lg">${lg ? `<img loading="lazy" src="${esc(lg)}" onerror="this.replaceWith(Object.assign(document.createElement('span'),{className:'ph',textContent:'TV'}))">` : '<span class="ph">TV</span>'}</div>
-      <div class="nm"><div dir="auto">${esc(c.name)}</div></div>
-      <button class="star ${isFav('live', c.stream_id) ? 'on' : ''}" data-f="${i}">${isFav('live', c.stream_id) ? I.star : I.starO}</button></div>`;
+  const logo = (c) => { const lg = img(c.stream_icon);
+    return `<div class="lg">${lg ? `<img loading="lazy" src="${esc(lg)}" onerror="this.replaceWith(Object.assign(document.createElement('span'),{className:'ph',textContent:'TV'}))">` : '<span class="ph">TV</span>'}</div>`; };
+  const rowHTML = (c, i, withStar) => `<div class="row ${current && current.stream_id == c.stream_id ? 'on' : ''}" data-i="${i}">
+      <span class="no">${esc(c.num || i + 1)}</span>${logo(c)}<div class="nm"><div dir="auto">${esc(c.name)}</div></div>
+      ${withStar ? `<button class="star ${isFav('live', c.stream_id) ? 'on' : ''}" data-f="${i}">${isFav('live', c.stream_id) ? I.star : I.starO}</button>` : ''}</div>`;
+  function renderRows(el, arr, from, compact) {
+    if (from === 0) el.innerHTML = '';
+    el.insertAdjacentHTML('beforeend', arr.slice(from, from + 200).map((c, k) => rowHTML(c, from + k, !compact)).join(''));
+    if (from + 200 < arr.length) setTimeout(() => { if (el.isConnected) renderRows(el, arr, from + 200, compact); }, 60);
   }
-  function renderRows(from) {
-    const el = $('#ll'); if (from === 0) el.innerHTML = '';
-    const part = list.slice(from, from + 200);
-    el.insertAdjacentHTML('beforeend', part.map((c, k) => rowHTML(c, from + k)).join(''));
-    if (from + 200 < list.length) setTimeout(() => renderRows(from + 200), 60);
-  }
+  function markOn() { $$('.row').forEach(r => { const arr = r.closest('#tvchs') ? tvList : list; const c = arr[+r.dataset.i]; r.classList.toggle('on', !!(c && current && c.stream_id == current.stream_id)); }); }
   $('#ll').onclick = (e) => {
     const f = e.target.closest('[data-f]');
     if (f) { const c = list[+f.dataset.f]; const nowOn = toggleFav('live', { id: c.stream_id, raw: c });
       f.classList.toggle('on', nowOn); f.innerHTML = nowOn ? I.star : I.starO; toast(nowOn ? 'Added to favorites' : 'Removed from favorites'); return; }
     const r = e.target.closest('.row'); if (!r) return;
     const c = list[+r.dataset.i];
-    if (current && current.stream_id == c.stream_id) { goFull(video); return; }
-    $$('.row.on').forEach(x => x.classList.remove('on')); r.classList.add('on');
-    current = c; playLive(c);
+    if (current && current.stream_id == c.stream_id) { enterTV(); return; }
+    playList = list; play(c);
+    if (isWide()) enterTV();
   };
-  function playLive(c) {
-    $('#lbx').classList.remove('hidden');
-    $('#nn').textContent = c.name; $('#ne').textContent = '';
-    loadVideo(video, playUrl('live', c.stream_id, 'm3u8'), { live: true, msg: $('#vm') });
-    window.scrollTo({ top: 0, behavior: 'smooth' });
+  function play(c) {
+    current = c; markOn();
+    lbx.classList.remove('hidden');
+    $$('.nn', lbx).forEach(x => x.textContent = c.name); $$('.ne', lbx).forEach(x => x.textContent = '');
+    playLive(video, c, $('#vm'));
+    if (!lbx.classList.contains('tv')) window.scrollTo({ top: 0, behavior: 'smooth' });
     api({ action: 'get_short_epg', stream_id: c.stream_id, limit: 2 }).then(j => {
       if (current !== c) return;
-      const L = (j && j.epg_listings) || [];
-      if (!L.length) return;
-      const t = (x) => { const d = new Date((x.start_timestamp || 0) * 1000); return d.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' }); };
-      $('#ne').textContent = 'Now: ' + b64(L[0].title) + (L[1] ? '  ·  ' + t(L[1]) + ' ' + b64(L[1].title) : '');
+      const L = (j && j.epg_listings) || []; if (!L.length) return;
+      const t = (x) => new Date((x.start_timestamp || 0) * 1000).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' });
+      $$('.ne', lbx).forEach(x => x.textContent = 'Now: ' + b64(L[0].title) + (L[1] ? '  ·  ' + t(L[1]) + ' ' + b64(L[1].title) : ''));
     }).catch(() => {});
   }
+  // ---- TV mode: full screen video with translucent categories + channels on top ----
+  let tvList = [];
+  function enterTV() {
+    lbx.classList.add('tv'); document.body.classList.add('tvon');
+    tvCat = store.get('lastLiveCat_' + acckey(), catId);
+    drawTvCats(); loadTvCat(tvCat); showPanel();
+    video.play().catch(() => {});
+  }
+  function exitTV() {
+    lbx.classList.remove('tv', 'panel'); document.body.classList.remove('tvon'); clearTimeout(hideT);
+    if (isWide()) { stopVideo(video); lbx.classList.add('hidden'); current = null; markOn(); }
+  }
+  function drawTvCats() {
+    $('#tvcats').innerHTML = allCats.map(c => `<button class="cat ${String(c.category_id) === String(tvCat) ? 'on' : ''}" data-c="${esc(c.category_id)}" dir="auto">${esc(c.category_name)}</button>`).join('');
+    const on = $('#tvcats .cat.on'); if (on) on.scrollIntoView({ block: 'center' });
+  }
+  async function loadTvCat(cid) {
+    tvCat = cid; const el = $('#tvchs'); el.innerHTML = spinner();
+    try { tvList = await getList(cid); } catch (e) { el.innerHTML = empty(e.message); return; }
+    renderRows(el, tvList, 0, true);
+    setTimeout(() => { const on = $('#tvchs .row.on'); if (on) on.scrollIntoView({ block: 'center' }); }, 50);
+  }
+  function showPanel() { lbx.classList.add('panel'); clearTimeout(hideT); hideT = setTimeout(() => lbx.classList.remove('panel'), 6000); }
+  $('#tvcats').onclick = (e) => { const b = e.target.closest('.cat'); if (!b) return; showPanel(); $$('#tvcats .cat').forEach(x => x.classList.toggle('on', x === b)); loadTvCat(b.dataset.c); };
+  $('#tvchs').onclick = (e) => { const r = e.target.closest('.row'); if (!r) return; showPanel(); playList = tvList; play(tvList[+r.dataset.i]); };
+  $('#tvchs').onscroll = $('#tvcats').onscroll = () => showPanel();
+  $('#tvtap').onclick = () => { if (lbx.classList.contains('panel')) { lbx.classList.remove('panel'); clearTimeout(hideT); } else showPanel(); };
+  lbx.addEventListener('mousemove', () => { if (lbx.classList.contains('tv')) showPanel(); });
+  $('#tvx').onclick = exitTV;
+  $('#fs').onclick = enterTV;
+  $('#xc').onclick = () => { stopVideo(video); lbx.classList.add('hidden'); current = null; markOn(); };
+  function zap(d) { if (!current || !playList.length) return; let i = playList.findIndex(c => c.stream_id == current.stream_id); i = (i + d + playList.length) % playList.length; play(playList[i]); showPanel(); }
+  function onKey(e) {
+    if (!lbx.classList.contains('tv')) return;
+    if (e.key === 'Escape') { if (lbx.classList.contains('panel')) lbx.classList.remove('panel'); else exitTV(); }
+    else if (e.key === 'ArrowUp') { e.preventDefault(); zap(-1); } else if (e.key === 'ArrowDown') { e.preventDefault(); zap(1); }
+    else if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); showPanel(); }
+  }
+  document.addEventListener('keydown', onKey);
   if (catId != null) loadCat(String(catId));
 }
 
-/* ---------------- video engine ---------------- */
+/* ---------------- video engine: direct MPEG-TS (instant start, like ExoPlayer) with HLS fallback ---------------- */
 const canNativeHls = () => !!document.createElement('video').canPlayType('application/vnd.apple.mpegurl');
-function loadHlsJs() {
-  if (window.Hls) return Promise.resolve();
-  return new Promise((res, rej) => { const s = document.createElement('script');
-    s.src = 'https://cdn.jsdelivr.net/npm/hls.js@1/dist/hls.min.js'; s.onload = res; s.onerror = rej; document.head.appendChild(s); });
+function loadScript(src, test) {
+  if (test()) return Promise.resolve();
+  return new Promise((res, rej) => { const s = document.createElement('script'); s.src = src; s.onload = res; s.onerror = rej; document.head.appendChild(s); });
 }
+const loadMpegts = () => loadScript('vendor/mpegts.js?v=1', () => window.mpegts);
+const loadHlsJs = () => loadScript('https://cdn.jsdelivr.net/npm/hls.js@1/dist/hls.min.js', () => window.Hls);
 function stopVideo(v) {
+  if (S.ts) { try { S.ts.pause(); S.ts.unload(); S.ts.detachMediaElement(); S.ts.destroy(); } catch (e) {} S.ts = null; }
   if (S.hls) { try { S.hls.destroy(); } catch (e) {} S.hls = null; }
-  if (v) { try { v.pause(); v.removeAttribute('src'); v.load(); } catch (e) {} }
+  if (v) { v.onerror = v.oncanplay = v.onplaying = v.onwaiting = null; try { v.pause(); v.removeAttribute('src'); v.load(); } catch (e) {} }
 }
+// remembers per server whether the fast engine works (blocked servers go straight to HLS next time)
+function tsOk(s) { const m = store.get('tsok', {}); return m[s] !== false; }
+function tsMark(s, ok) { const m = store.get('tsok', {}); m[s] = ok; store.set('tsok', m); }
+async function playLive(v, c, msg) {
+  const token = (S.playTok = (S.playTok || 0) + 1);
+  stopVideo(v);
+  const show = (html) => { if (!msg) return; msg.innerHTML = html; msg.classList.toggle('hidden', !html); };
+  show('<div class="spin"></div>');
+  v.onplaying = () => show('');
+  const failMsg = () => show('This channel is not available right now.<br>Try another channel.');
+  const mmsOk = !!(window.ManagedMediaSource || window.MediaSource);
+  if (mmsOk && tsOk(S.acc.s)) {
+    try {
+      await loadMpegts();
+      if (token !== S.playTok) return;
+      if (window.mpegts && mpegts.getFeatureList().mseLivePlayback) {
+        v.disableRemotePlayback = true;
+        const p = mpegts.createPlayer({ type: 'mpegts', isLive: true, url: location.origin + playUrl('live', c.stream_id, 'ts') }, {
+          enableWorker: false, enableStashBuffer: false, stashInitialSize: 128 * 1024, lazyLoad: false,
+          liveBufferLatencyChasing: true, liveBufferLatencyMaxLatency: 4, liveBufferLatencyMinRemain: 0.5,
+          autoCleanupSourceBuffer: true });
+        S.ts = p; let started = false;
+        p.attachMediaElement(v); p.load();
+        v.onplaying = () => { started = true; show(''); tsMark(S.acc.s, true); };
+        v.onwaiting = () => show('<div class="spin"></div>');
+        const fallback = () => { if (token !== S.playTok) return; if (!started) tsMark(S.acc.s, false); playHls(v, c, msg, token, failMsg); };
+        p.on(mpegts.Events.ERROR, (type, detail) => { if (token !== S.playTok) return; if (started && type === mpegts.ErrorTypes.MEDIA_ERROR) return; fallback(); });
+        const pr = v.play(); if (pr && pr.catch) pr.catch((err) => { if (err && err.name === 'NotAllowedError') tapToPlay(v, msg); });
+        setTimeout(() => { if (token === S.playTok && !started && S.ts === p) fallback(); }, 9000);
+        return;
+      }
+    } catch (e) {}
+  }
+  playHls(v, c, msg, token, failMsg);
+}
+function tapToPlay(v, msg) {
+  if (!msg) return;
+  msg.innerHTML = `<button class="btn red tapplay">${I.play} Tap to play</button>`; msg.classList.remove('hidden');
+  const b = msg.querySelector('button'); b.onclick = () => { v.play().catch(() => {}); msg.classList.add('hidden'); };
+}
+async function playHls(v, c, msg, token, failMsg) {
+  stopVideo(v); if (token !== S.playTok) return;
+  const url = playUrl('live', c.stream_id, 'm3u8');
+  if (msg) { msg.innerHTML = '<div class="spin"></div>'; msg.classList.remove('hidden'); }
+  v.onplaying = () => { if (msg) msg.classList.add('hidden'); };
+  if (canNativeHls()) {
+    let tries = 0;
+    v.onerror = () => { if (token !== S.playTok) return; if (tries++ < 1) setTimeout(() => { v.src = url + '?r=' + tries; v.play().catch(() => {}); }, 1200); else failMsg(); };
+    v.src = url; v.play().catch((err) => { if (err && err.name === 'NotAllowedError') tapToPlay(v, msg); }); return;
+  }
+  try { await loadHlsJs(); } catch (e) { failMsg(); return; }
+  if (token !== S.playTok) return;
+  if (!window.Hls || !Hls.isSupported()) { failMsg(); return; }
+  const h = new Hls({ liveSyncDurationCount: 2, maxBufferLength: 20, startFragPrefetch: true }); S.hls = h; let tries = 0;
+  h.on(Hls.Events.ERROR, (_, d) => { if (d.fatal) { if (tries++ < 1) { h.loadSource(url); h.startLoad(); } else failMsg(); } });
+  h.loadSource(url); h.attachMedia(v); h.on(Hls.Events.MANIFEST_PARSED, () => v.play().catch(() => {}));
+}
+// VOD (movies / episodes): plain file playback
 async function loadVideo(v, url, o) {
   o = o || {}; stopVideo(v);
-  const msg = o.msg; let tries = 0;
+  const msg = o.msg;
   const show = (html) => { if (!msg) return; msg.innerHTML = html; msg.classList.toggle('hidden', !html); };
   show('<div class="spin"></div>');
   v.oncanplay = v.onplaying = () => show('');
   v.onwaiting = () => show('<div class="spin"></div>');
-  const fail = () => show(o.live ? 'This channel is not available right now.<br>Try another channel.' :
-    'This video can\'t play here.<br>The format may not be supported on this device.');
-  const isHls = /\.m3u8(\?|$)/.test(url);
-  if (!isHls || canNativeHls()) {
-    v.onerror = () => { if (o.live && tries < 2) { tries++; setTimeout(() => { v.src = url + (url.includes('?') ? '&' : '?') + 'r=' + tries; v.play().catch(() => {}); }, 1500); } else fail(); };
-    v.src = url;
-    if (o.start) v.addEventListener('loadedmetadata', () => { try { v.currentTime = o.start; } catch (e) {} }, { once: true });
-    v.play().catch(() => {});
-    return;
-  }
-  try { await loadHlsJs(); } catch (e) { fail(); return; }
-  if (!window.Hls || !Hls.isSupported()) { v.src = url; v.play().catch(fail); return; }
-  const h = new Hls({ lowLatencyMode: false, maxBufferLength: 30 }); S.hls = h;
-  h.on(Hls.Events.ERROR, (_, d) => { if (d.fatal) { if (tries++ < 2) { h.loadSource(url); h.startLoad(); } else fail(); } });
-  h.loadSource(url); h.attachMedia(v);
-  h.on(Hls.Events.MANIFEST_PARSED, () => v.play().catch(() => {}));
+  v.onerror = () => show('This video can\'t play here.<br>The format may not be supported on this device.');
+  v.src = url;
+  if (o.start) v.addEventListener('loadedmetadata', () => { try { v.currentTime = o.start; } catch (e) {} }, { once: true });
+  v.play().catch(() => {});
 }
 function goFull(v) {
   try {
@@ -458,7 +576,7 @@ function openPlayer(o) {
   const v = $('video', fpEl);
   $('#fpx', fpEl).onclick = closePlayer;
   $('#fpf', fpEl).onclick = () => goFull(v);
-  loadVideo(v, o.url, { msg: $('.vmsg', fpEl), start });
+  if (o.live) playLive(v, o.live, $('.vmsg', fpEl)); else loadVideo(v, o.url, { msg: $('.vmsg', fpEl), start });
   if (start) toast('Resuming from ' + fmtTime(start));
   const save = () => { if (v.duration && isFinite(v.duration) && v.currentTime > 5)
     progSet(o.pid, { t: v.currentTime, d: v.duration, title: o.title, img: o.img, kind: o.kind, sid: o.sid, ext: o.ext, series: o.series }); };
@@ -478,8 +596,8 @@ function openPlayer(o) {
 /* ---------------- movies / series grids ---------------- */
 async function renderGridSection(kind, catId) {
   const isV = kind === 'vod';
-  const title = isV ? 'Movies' : 'Series';
-  app.innerHTML = bar(title, { search: true }) + `<div class="chips" id="chips"></div><div id="gw">${spinner()}</div>`;
+  app.innerHTML = sideLayout(isV ? 'Movies' : 'Series');
+  const main = $('#secmain'); main.innerHTML = `<div id="gw">${spinner()}</div>`;
   let cats;
   try { cats = await cached(isV ? 'vc' : 'sc', { action: isV ? 'get_vod_categories' : 'get_series_categories' }); }
   catch (e) { $('#gw').innerHTML = empty(e.message); return; }
@@ -489,9 +607,7 @@ async function renderGridSection(kind, catId) {
   const ck = 'lastCat_' + kind + '_' + acckey();
   if (!catId) catId = store.get(ck, null);
   if (!allCats.some(c => String(c.category_id) === String(catId))) catId = allCats.length ? allCats[0].category_id : null;
-  $('#chips').innerHTML = allCats.map(c => `<button class="chip ${String(c.category_id) === String(catId) ? 'on' : ''}" data-c="${esc(c.category_id)}" dir="auto">${esc(c.category_name)}</button>`).join('');
-  const on = $('#chips .chip.on'); if (on) on.scrollIntoView({ inline: 'center', block: 'nearest' });
-  $$('#chips .chip').forEach(b => b.onclick = () => { $$('#chips .chip').forEach(x => x.classList.toggle('on', x === b)); load(b.dataset.c); });
+  wireSide(allCats, catId, (c) => load(c));
   async function load(cid) {
     store.set(ck, cid);
     $('#gw').innerHTML = spinner();
@@ -501,6 +617,7 @@ async function renderGridSection(kind, catId) {
       else items = await cached((isV ? 'vs_' : 'ss_') + cid, { action: isV ? 'get_vod_streams' : 'get_series', category_id: cid });
     } catch (e) { $('#gw').innerHTML = empty(e.message); return; }
     posterGrid($('#gw'), items, isV);
+    window.scrollTo(0, 0);
   }
   if (catId != null) load(String(catId));
 }
@@ -642,7 +759,7 @@ function renderSearch() {
       + (V.length ? `<h4>Movies</h4><div class="grid">${V.map(i => posterCard(i, true)).join('')}</div>` : '')
       + (Sr.length ? `<h4>Series</h4><div class="grid">${Sr.map(i => posterCard(i, false)).join('')}</div>` : '');
     $$('[data-li]', el).forEach(r => r.onclick = () => { const c = L[+r.dataset.li];
-      openPlayer({ title: c.name, url: playUrl('live', c.stream_id, 'm3u8'), pid: 'l' + c.stream_id, kind: 'live' }); });
+      openPlayer({ title: c.name, live: c, pid: 'l' + c.stream_id, kind: 'live' }); });
   }
 }
 

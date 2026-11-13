@@ -227,3 +227,61 @@ img{display:block}
 .howto ol{padding-left:22px;margin:10px 0 14px}.howto li{margin-bottom:6px}
 .howto .shr{display:inline-block;padding:0 6px;border:1px solid var(--border);border-radius:6px}
 .howto .ar2{color:var(--muted);font-size:14px;border-top:1px solid var(--divider);padding-top:12px}
+
+/* ===== side categories: drawer on phones, fixed sidebar on big screens ===== */
+.catbtn{display:flex;align-items:center;gap:8px;height:42px;max-width:46vw;padding:0 12px;border-radius:12px;background:linear-gradient(135deg,#2A2D33,#0E0F12);
+  border:1.2px solid rgba(203,209,217,.52);color:var(--silverL);font-weight:700;font-size:14px}
+.catbtn svg{width:20px;height:20px;flex:0 0 20px}
+.catbtn span{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.catbtn:active{background:var(--red)}
+.sec{position:relative}
+.side{position:fixed;z-index:60;top:0;bottom:0;left:0;width:min(82vw,320px);background:rgba(14,6,9,.97);backdrop-filter:blur(18px);-webkit-backdrop-filter:blur(18px);
+  border-right:1px solid var(--border);transform:translateX(-102%);transition:transform .22s ease;overflow-y:auto;-webkit-overflow-scrolling:touch;
+  padding:calc(14px + var(--st)) 10px calc(20px + var(--sb)) calc(10px + var(--sl));box-shadow:20px 0 40px rgba(0,0,0,.5)}
+.side.open{transform:none}
+.sideback{position:fixed;inset:0;z-index:59;background:rgba(0,0,0,.5);opacity:0;pointer-events:none;transition:opacity .2s}
+.sideback.open{opacity:1;pointer-events:auto}
+.side-h{color:var(--muted);font-size:12px;font-weight:800;letter-spacing:1.2px;text-transform:uppercase;margin:4px 10px 10px}
+.cat{display:block;width:100%;text-align:left;padding:13px 14px;border-radius:12px;font-weight:700;font-size:15px;color:var(--silver);margin-bottom:3px;
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis;border:1px solid transparent}
+.cat:hover{background:rgba(255,255,255,.05)}
+.cat.on{background:linear-gradient(90deg,rgba(211,36,54,.9),rgba(142,18,31,.75));color:#fff;border-color:rgba(237,241,246,.35)}
+@media (min-width:900px){
+  .catbtn{display:none}
+  .sec{display:grid;grid-template-columns:280px minmax(0,1fr)}
+  .side{position:sticky;top:calc(63px + var(--st));height:calc(100vh - 63px - var(--st));transform:none;width:auto;box-shadow:none;background:rgba(10,4,6,.55);z-index:5;padding-top:14px}
+  .sideback{display:none}
+  .secmain .list{padding:10px 18px 40px;display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:6px 14px}
+  .secmain .grid{padding:16px 22px 40px}
+  .liveLayout{display:block}
+}
+
+/* ===== live player + TV mode (full screen video with translucent lists on top) ===== */
+.livebox .vwrap video{object-fit:contain}
+.tvtop,.tvpanel,.tvtap{display:none}
+body.tvon{overflow:hidden}
+.livebox.tv{position:fixed;inset:0;z-index:120;background:#000;border:0}
+.livebox.tv .nowbar{display:none}
+.livebox.tv .vwrap{position:absolute;inset:0;aspect-ratio:auto;max-height:none;height:100%}
+.livebox.tv .tvtap{display:block;position:absolute;left:0;right:0;top:0;bottom:70px;z-index:2}
+.livebox.tv .tvtop{display:flex;position:absolute;left:0;right:0;top:0;z-index:4;align-items:center;gap:12px;
+  padding:calc(12px + var(--st)) calc(16px + var(--sr)) 26px calc(16px + var(--sl));background:linear-gradient(180deg,rgba(0,0,0,.85),rgba(0,0,0,0));transition:opacity .25s}
+.livebox.tv .tvtop .tx{flex:1;min-width:0}
+.livebox.tv .tvtop .nn{font-weight:800;font-size:17px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.livebox.tv .tvtop .ne{display:block;color:var(--silver);font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.live{background:var(--red);color:#fff;font-size:11px;font-weight:900;padding:3px 7px;border-radius:6px;letter-spacing:.5px}
+.livebox.tv .tvpanel{display:flex;position:absolute;z-index:3;left:calc(12px + var(--sl));top:calc(78px + var(--st));bottom:calc(80px + var(--sb));gap:10px;transition:opacity .25s,transform .25s}
+.tvcats,.tvchs{background:rgba(10,4,6,.58);backdrop-filter:blur(14px) saturate(1.2);-webkit-backdrop-filter:blur(14px) saturate(1.2);border:1px solid rgba(203,209,217,.16);
+  border-radius:18px;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:8px}
+.tvcats{width:250px}.tvchs{width:360px}
+.tvchs .row{padding:7px 8px;margin-bottom:2px}.tvchs .row .lg{width:46px;flex-basis:46px;height:34px}
+.tvchs .row .nm div{font-size:14.5px}
+.livebox.tv:not(.panel) .tvpanel{opacity:0;transform:translateX(-30px);pointer-events:none}
+.livebox.tv:not(.panel) .tvtop{opacity:0;pointer-events:none}
+.livebox.tv:not(.panel) video{cursor:none}
+@media (max-width:899px){
+  .livebox.tv .tvpanel{left:calc(6px + var(--sl));right:calc(6px + var(--sr));top:calc(70px + var(--st));bottom:calc(70px + var(--sb))}
+  .tvcats{width:40%;min-width:130px}.tvchs{flex:1;width:auto}
+  .tvcats .cat{font-size:13.5px;padding:10px}
+}
+.vmsg .tapplay{pointer-events:auto;width:auto;padding:0 22px}
