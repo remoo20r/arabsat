@@ -133,6 +133,7 @@ def pk_save(d):
 # short-lived handshake sessions between the app (http) and the key page (https)
 SESS = {}
 SESS_TTL = 15 * 60
+GEO = {}
 
 
 def sess_get(sid):
@@ -245,6 +246,8 @@ class Handler(SimpleHTTPRequestHandler):
                 return self.send_json([{"id": i, "name": s["name"]} for i, s in enumerate(load_servers())])
             if url.path == "/api/p":
                 return self.api_proxy(url.query)
+            if url.path == "/api/geo":
+                return self.geo()
             if url.path == "/api/config":
                 return self.send_json({"rp": RP_ID})
             if url.path == "/api/sess/new":
@@ -284,6 +287,26 @@ class Handler(SimpleHTTPRequestHandler):
         if url.path == "/":
             self.path = "/index.html"
         return super().do_GET()
+
+    # ---------- city + coordinates for the home screen weather ----------
+    def geo(self):
+        ip = (self.headers.get("X-Forwarded-For") or self.client_address[0]).split(",")[0].strip()
+        hit = GEO.get(ip)
+        if hit and time.time() - hit[0] < 6 * 3600:
+            return self.send_json(hit[1])
+        out = {}
+        try:
+            with urllib.request.urlopen("http://ip-api.com/json/%s?fields=status,country,countryCode,regionName,city,lat,lon" % urllib.parse.quote(ip), timeout=8) as r:
+                j = json.loads(r.read())
+            if j.get("status") == "success":
+                out = {"city": j.get("city"), "region": j.get("regionName"), "country": j.get("country"), "cc": j.get("countryCode"),
+                       "lat": j.get("lat"), "lon": j.get("lon")}
+        except Exception:
+            pass
+        if len(GEO) > 2000:
+            GEO.clear()
+        GEO[ip] = (time.time(), out)
+        return self.send_json(out)
 
     # ---------- device activation ----------
     def new_code(self):

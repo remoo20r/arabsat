@@ -100,7 +100,7 @@ const img = (u) => (u && /^https?:\/\//.test(u)) ? u : '';
 let cleanup = [];
 function onLeave(fn) { cleanup.push(fn); }
 function route() {
-  cleanup.forEach(f => { try { f(); } catch (e) {} }); cleanup = [];
+  cleanup.forEach(f => { try { f(); } catch (e) {} }); cleanup = []; S.onPlayerClose = null;
   closePlayer();
   window.scrollTo(0, 0);
   if (!S.acc) return renderLogin();
@@ -253,38 +253,84 @@ async function syncActivation() {
 }
 
 /* ---------------- home ---------------- */
+const HI = {
+  live: '<svg viewBox="0 0 48 48" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="14" width="38" height="27" rx="7"/><path d="M17 5l7 9 7-9"/><path class="acc" d="M20 21.5v12l10-6z"/><path d="M15 44h18"/></svg>',
+  movies: '<svg viewBox="0 0 48 48" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><circle cx="14" cy="12" r="6.5"/><circle cx="29" cy="11" r="5"/><rect x="6" y="21" width="28" height="19" rx="4.5"/><path class="acc" d="M34 27.5l8-5v16l-8-5z"/><path d="M12 40l-3 6M28 40l3 6"/></svg>',
+  series: '<svg viewBox="0 0 48 48" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><rect x="11" y="9" width="32" height="25" rx="6"/><path d="M5 16v20a6 6 0 0 0 6 6h24"/><path class="acc" d="M23 16.5v10l8.5-5z"/></svg>',
+  upd: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M20 11a8 8 0 1 0-2.3 5.7M20 4v7h-7"/></svg>',
+  pin: '<svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2a7 7 0 0 0-7 7c0 5 7 13 7 13s7-8 7-13a7 7 0 0 0-7-7zm0 9.5A2.5 2.5 0 1 1 12 6.5a2.5 2.5 0 0 1 0 5z"/></svg>',
+};
+const WX = {
+  sun: '<svg viewBox="0 0 24 24" fill="none" stroke="#F3D98B" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="4.5" fill="#F3D98B"/><path d="M12 2v2M12 20v2M2 12h2M20 12h2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></svg>',
+  cloud: '<svg viewBox="0 0 24 24" fill="#CBD1D9"><path d="M7 18a5 5 0 0 1-.6-10A6 6 0 0 1 18 9.5 4.3 4.3 0 0 1 17.5 18z"/></svg>',
+  part: '<svg viewBox="0 0 24 24"><circle cx="8" cy="8" r="4" fill="#F3D98B"/><path fill="#CBD1D9" d="M8 20a4.5 4.5 0 0 1-.5-9A5.5 5.5 0 0 1 18 12a4 4 0 0 1-.5 8z"/></svg>',
+  rain: '<svg viewBox="0 0 24 24"><path fill="#CBD1D9" d="M7 15a5 5 0 0 1-.6-10A6 6 0 0 1 18 6.5 4.3 4.3 0 0 1 17.5 15z"/><path d="M8 18l-1 3M12 18l-1 3M16 18l-1 3" stroke="#7DB7FF" stroke-width="2" stroke-linecap="round"/></svg>',
+  snow: '<svg viewBox="0 0 24 24"><path fill="#CBD1D9" d="M7 15a5 5 0 0 1-.6-10A6 6 0 0 1 18 6.5 4.3 4.3 0 0 1 17.5 15z"/><g fill="#fff"><circle cx="8" cy="19" r="1.2"/><circle cx="12" cy="21" r="1.2"/><circle cx="16" cy="19" r="1.2"/></g></svg>',
+  storm: '<svg viewBox="0 0 24 24"><path fill="#9AA3AF" d="M7 14a5 5 0 0 1-.6-10A6 6 0 0 1 18 5.5 4.3 4.3 0 0 1 17.5 14z"/><path fill="#F3D98B" d="M12 13l-3 5h3l-1 5 4-7h-3l1-3z"/></svg>',
+  fog: '<svg viewBox="0 0 24 24" stroke="#CBD1D9" stroke-width="2" stroke-linecap="round"><path d="M4 9h16M3 13h18M5 17h14"/></svg>',
+};
+function wxIcon(code) { code = +code;
+  if (code === 0) return WX.sun; if (code <= 2) return WX.part; if (code === 3) return WX.cloud; if (code <= 48) return WX.fog;
+  if (code <= 67 || (code >= 80 && code <= 82)) return WX.rain; if (code <= 77 || code === 85 || code === 86) return WX.snow; return WX.storm; }
+async function loadWeather() {
+  const box = $('#hwx'); if (!box) return;
+  let g = store.get('geo', null);
+  try {
+    if (!g || Date.now() - g.at > 6 * 3600 * 1000) { g = await (await fetch('/api/geo')).json(); if (g && g.lat != null) { g.at = Date.now(); store.set('geo', g); } }
+    if (!g || g.lat == null) return;
+    const f = g.cc === 'US' || g.cc === 'LR' || g.cc === 'MM';
+    let w = store.get('wx', null);
+    if (!w || Date.now() - w.at > 30 * 60 * 1000) {
+      const j = await (await fetch(`https://api.open-meteo.com/v1/forecast?latitude=${g.lat}&longitude=${g.lon}&current=temperature_2m,weather_code&temperature_unit=${f ? 'fahrenheit' : 'celsius'}`)).json();
+      w = { t: Math.round(j.current.temperature_2m), c: j.current.weather_code, u: f ? 'F' : 'C', at: Date.now() }; store.set('wx', w);
+    }
+    if (!$('#hwx')) return;
+    box.innerHTML = `<div class="wxi">${wxIcon(w.c)}</div><div><b>${w.t}°${w.u}</b><span>${I.pin ? '' : ''}${esc(g.city || g.region || '')}${g.country ? ', ' + esc(g.country) : ''}</span></div>`;
+  } catch (e) {}
+}
 function renderHome() {
   const ui = S.acc.info || {};
   const exp = ui.exp_date ? new Date(ui.exp_date * 1000) : null;
   const cw = continueList();
-  app.innerHTML = `<div class="home">
-    <div class="bar"><button class="ibtn" id="rf">${I.refresh}</button><div class="center">${logoHTML()}</div>
-      <button class="ibtn" data-go="#/search">${I.search}</button><button class="ibtn" id="st">${I.gear}</button></div>
-    <div class="tiles">
-      <button class="tile t-live" data-go="#/live">${I.tv}<span>Live TV</span></button>
-      <button class="tile t-mov" data-go="#/movies">${I.film}<span>Movies</span></button>
-      <button class="tile t-ser" data-go="#/series">${I.lib}<span>Series</span></button>
+  const card = (key, title, sub, go, icon) => `<button class="tile hcard hc-${key}" data-go="${go}">
+      <span class="hc-tab"></span><span class="hc-t">${title}</span><span class="hc-c" id="cnt-${key}">${sub}</span>
+      <span class="hc-u">${HI.upd}<em id="upd-${key}">Updating…</em></span><span class="hc-i">${icon}</span></button>`;
+  app.innerHTML = `<div class="home home2"><div class="hbg" id="hbg"></div>
+    <div class="htop"><div class="hlogo"><img src="icon-192.png" alt=""><div><div class="w">ARAB <b>SAT</b></div><div class="ar">عرب سات</div></div></div>
+      <div class="hact"><button class="ibtn" data-go="#/search">${I.search}</button><button class="ibtn" id="rf">${I.refresh}</button><button class="ibtn" id="st">${I.gear}</button></div></div>
+    <div class="hcards">
+      ${card('live', 'Live TV', 'Channels', '#/live', HI.live)}
+      ${card('movies', 'Movies', 'Movies', '#/movies', HI.movies)}
+      ${card('series', 'Series', 'Series', '#/series', HI.series)}
     </div>
     ${cw.length ? `<div class="section-t">Continue Watching</div><div class="hrow">${cw.map(c => `
       <button class="cw" data-cw="${esc(c.id)}"><div class="im" style="background-image:url('${esc(img(c.img))}')"><div class="prog" style="width:${Math.min(100, c.t / c.d * 100)}%"></div></div>
       <div class="n" dir="auto">${esc(c.title)}</div></button>`).join('')}</div>` : ''}
-    <div class="expiry">${exp ? `Subscription active until <b>${exp.toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' })}</b>` : (ui.username ? 'Subscription: <b>Unlimited</b>' : '')}</div>
-    <div class="foot"><a class="chip-a" href="tel:${SUPPORT.tel}">${I.phone}${SUPPORT.show}</a>
-      <div class="clock"><div class="t" id="ck"></div><div class="d" id="cd"></div></div>
-      <button class="newbtn" data-go="#/new">NEW</button></div>
-  </div>`;
+    <div class="hbot">
+      <div class="hb-l"><button class="newbtn" data-go="#/new">NEW</button><div class="hexp">${exp ? `Active until <b>${exp.toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' })}</b>` : (ui.username ? '<b>Unlimited</b>' : '')}<a href="tel:${SUPPORT.tel}">${I.phone}${SUPPORT.show}</a></div></div>
+      <div class="hb-c"><div class="t" id="ck"></div><div class="d" id="cd"></div></div>
+      <div class="hb-r" id="hwx"></div>
+    </div></div>`;
   const tick = () => { const n = new Date(); const t = $('#ck'); if (!t) return;
     t.textContent = n.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' });
-    $('#cd').textContent = n.toLocaleDateString(undefined, { weekday: 'long', month: 'short', day: 'numeric' }); };
+    $('#cd').textContent = n.toLocaleDateString(undefined, { weekday: 'long', month: 'long', day: 'numeric' }); };
   tick(); const iv = setInterval(tick, 10000); onLeave(() => clearInterval(iv));
   $('#st').onclick = openSettings;
-  $('#rf').onclick = () => { S.mem = {}; toast('Lists refreshed'); refreshAccount(); };
+  $('#rf').onclick = () => { S.mem = {}; toast('Lists refreshed'); refreshAccount(); renderHome(); };
   $$('[data-cw]').forEach(b => b.onclick = () => resumeItem(cw.find(c => String(c.id) === b.dataset.cw)));
-  // warm the catalogs in the background
+  loadWeather();
+  // counts + a blurred movie poster behind everything
+  const fmt = (n) => n >= 1000 ? '+' + (Math.floor(n / 100) * 100).toLocaleString() : String(n);
+  const setC = (k, arr, word) => { const el = $('#cnt-' + k); if (el && Array.isArray(arr)) { el.textContent = fmt(arr.length) + ' ' + word; $('#upd-' + k).textContent = 'Updated just now'; } };
+  cached('all_l', { action: 'get_live_streams' }).then(a => setC('live', a, 'Channels')).catch(() => {});
+  cached('all_v', { action: 'get_vod_streams' }).then(a => { setC('movies', a, 'Movies');
+    const withPic = a.filter(x => img(x.stream_icon)).slice(0, 60); const pick = withPic[Math.floor(Math.random() * withPic.length)];
+    if (pick && $('#hbg')) { const im = new Image(); im.onload = () => { const b = $('#hbg'); if (b) { b.style.backgroundImage = `url('${img(pick.stream_icon)}')`; b.classList.add('on'); } }; im.src = img(pick.stream_icon); }
+  }).catch(() => {});
+  cached('all_s', { action: 'get_series' }).then(a => setC('series', a, 'Series')).catch(() => {});
   cached('lc', { action: 'get_live_categories' }).catch(() => {});
   if (window.ManagedMediaSource || window.MediaSource) loadMpegts().catch(() => {});
-  cached('vc', { action: 'get_vod_categories' }).catch(() => {});
-  cached('sc', { action: 'get_series_categories' }).catch(() => {});
+  setTimeout(() => { if (!document.activeElement || document.activeElement === document.body) { const f = $('.hcard'); if (f && document.body.classList.contains('kbd')) f.focus(); } }, 300);
   refreshAccount();
 }
 async function refreshAccount() {
@@ -297,12 +343,12 @@ async function refreshAccount() {
 function continueList() {
   const all = progAll();
   return Object.keys(all).map(k => Object.assign({ id: k }, all[k]))
-    .filter(c => c.d > 60 && c.t > 30 && c.t / c.d < 0.95).sort((a, b) => b.ts - a.ts).slice(0, 12);
+    .filter(c => c.d > 60 && c.t > 30 && !c.done && c.t / c.d < 0.93).sort((a, b) => b.ts - a.ts).slice(0, 12);
 }
 function resumeItem(c) {
   if (!c) return;
-  if (c.kind === 'movie') openPlayer({ title: c.title, url: playUrl('movie', c.sid, c.ext), pid: c.id, img: c.img, kind: 'movie', sid: c.sid, ext: c.ext });
-  else if (c.kind === 'ep') location.hash = '#/show/' + c.series;
+  if (c.kind === 'movie') askResume(c.id, c.title, (st) => openPlayer({ title: c.title, url: playUrl('movie', c.sid, c.ext), pid: c.id, img: c.img, kind: 'movie', sid: c.sid, ext: c.ext, start: st }));
+  else if (c.kind === 'ep') askResume(c.id, c.title, (st) => openPlayer({ title: c.title, url: playUrl('series', c.sid, c.ext || 'mp4'), pid: c.id, img: c.img, kind: 'ep', sid: c.sid, ext: c.ext, series: c.series, start: st }));
 }
 
 function openSettings() {
@@ -557,12 +603,12 @@ function stopVideo(v) {
 function tsOk() { return true; }
 function tsMark() {}
 async function playLive(v, c, msg) {
-  const token = (S.playTok = (S.playTok || 0) + 1);
+  const token = (S.playTok = (S.playTok || 0) + 1); S.lastTsErr = '';
   stopVideo(v);
   const show = (html) => { if (!msg) return; msg.innerHTML = html; msg.classList.toggle('hidden', !html); };
   show('<div class="spin"></div>');
   v.onplaying = () => show('');
-  const failMsg = () => show('This channel is not available right now.<br>Try another channel.');
+  const failMsg = (code) => explainFail(show, code);
   const mmsOk = !!(window.ManagedMediaSource || window.MediaSource);
   if (mmsOk && tsOk(S.acc.s)) {
     try {
@@ -571,15 +617,15 @@ async function playLive(v, c, msg) {
       if (window.mpegts && mpegts.getFeatureList().mseLivePlayback) {
         v.disableRemotePlayback = true;
         const p = mpegts.createPlayer({ type: 'mpegts', isLive: true, url: location.origin + playUrl('live', c.stream_id, 'ts') }, {
-          enableWorker: false, enableStashBuffer: false, stashInitialSize: 128 * 1024, lazyLoad: false,
-          liveBufferLatencyChasing: true, liveBufferLatencyMaxLatency: 4, liveBufferLatencyMinRemain: 0.5,
-          autoCleanupSourceBuffer: true });
+          enableWorker: false, enableStashBuffer: true, stashInitialSize: 384 * 1024, lazyLoad: false,
+          liveBufferLatencyChasing: false, liveSync: true, liveSyncMaxLatency: 14, liveSyncTargetLatency: 6, liveSyncPlaybackRate: 1.1,
+          autoCleanupSourceBuffer: true, autoCleanupMaxBackwardDuration: 60, autoCleanupMinBackwardDuration: 30 });
         S.ts = p; let started = false;
         p.attachMediaElement(v); p.load();
         v.onplaying = () => { started = true; show(''); tsMark(S.acc.s, true); };
         v.onwaiting = () => show('<div class="spin"></div>');
-        const fallback = () => { if (token !== S.playTok) return; if (!started) tsMark(S.acc.s, false); playHls(v, c, msg, token, failMsg); };
-        p.on(mpegts.Events.ERROR, (type, detail) => { if (token !== S.playTok) return; if (started && type === mpegts.ErrorTypes.MEDIA_ERROR) return; fallback(); });
+        const fallback = (why) => { if (token !== S.playTok) return; S.lastTsErr = why || 'ts-timeout'; playHls(v, c, msg, token, failMsg); };
+        p.on(mpegts.Events.ERROR, (type, detail, info) => { if (token !== S.playTok) return; if (started && type === mpegts.ErrorTypes.MEDIA_ERROR) return; fallback('ts:' + detail + (info && info.code ? ':' + info.code : '')); });
         const pr = v.play(); if (pr && pr.catch) pr.catch((err) => { if (err && err.name === 'NotAllowedError') tapToPlay(v, msg); });
         setTimeout(() => { if (token === S.playTok && !started && S.ts === p) fallback(); }, 7000);
         return;
@@ -587,6 +633,15 @@ async function playLive(v, c, msg) {
     } catch (e) {}
   }
   playHls(v, c, msg, token, failMsg);
+}
+async function explainFail(show, code) {
+  show('This channel is not available right now.<br>Try another channel.' + (code ? `<small class="ecode">${esc(code)}</small>` : ''));
+  try {
+    const j = await api({}); const u = (j && j.user_info) || {};
+    if (+u.max_connections && +u.active_cons >= +u.max_connections)
+      show(`This account is already watching on another device.<br><small class="ecode">Allowed devices at the same time: ${esc(u.max_connections)}. Close it on the other device and try again.</small>`);
+    else if (u.status && u.status !== 'Active') show('Your subscription is ' + esc(u.status) + '.<br>Please contact customer service.');
+  } catch (e) {}
 }
 function tapToPlay(v, msg) {
   if (!msg) return;
@@ -600,7 +655,7 @@ async function playHls(v, c, msg, token, failMsg) {
   v.onplaying = () => { if (msg) msg.classList.add('hidden'); };
   if (canNativeHls()) {
     let tries = 0;
-    v.onerror = () => { if (token !== S.playTok) return; if (tries++ < 1) setTimeout(() => { v.src = url + '?r=' + tries; v.play().catch(() => {}); }, 1200); else failMsg(); };
+    v.onerror = () => { if (token !== S.playTok) return; if (tries++ < 1) setTimeout(() => { v.src = url + '?r=' + tries; v.play().catch(() => {}); }, 1200); else failMsg((S.lastTsErr ? S.lastTsErr + ' / ' : '') + 'hls:' + ((v.error && v.error.code) || '?')); };
     v.src = url; v.play().catch((err) => { if (err && err.name === 'NotAllowedError') tapToPlay(v, msg); }); return;
   }
   try { await loadHlsJs(); } catch (e) { failMsg(); return; }
@@ -630,41 +685,117 @@ function goFull(v) {
   } catch (e) {}
 }
 
-/* ---------------- full player (movies / episodes) ---------------- */
+/* ---------------- full player (movies / episodes) with pro controls ---------------- */
 let fpEl = null;
+const I2 = {
+  pause: '<svg viewBox="0 0 24 24" fill="currentColor"><path d="M6 5h4v14H6zM14 5h4v14h-4z"/></svg>',
+  back10: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 3-6.7"/><path d="M3 4v5h5"/><text x="12" y="15.5" fill="currentColor" stroke="none" font-size="7.5" font-weight="800" text-anchor="middle" font-family="sans-serif">10</text></svg>',
+  fwd10: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 1 1-3-6.7"/><path d="M21 4v5h-5"/><text x="12" y="15.5" fill="currentColor" stroke="none" font-size="7.5" font-weight="800" text-anchor="middle" font-family="sans-serif">10</text></svg>',
+  vol: '<svg viewBox="0 0 24 24" fill="currentColor"><path d="M4 9v6h4l5 4V5L8 9H4z"/><path d="M16 8.5a5 5 0 0 1 0 7" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>',
+  mute: '<svg viewBox="0 0 24 24" fill="currentColor"><path d="M4 9v6h4l5 4V5L8 9H4z"/><path d="M16 9l5 6M21 9l-5 6" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>',
+  next: '<svg viewBox="0 0 24 24" fill="currentColor"><path d="M6 5l9 7-9 7zM16 5h3v14h-3z"/></svg>',
+};
+const clock = (sec) => { sec = Math.max(0, Math.floor(sec || 0)); const h = Math.floor(sec / 3600), m = Math.floor(sec % 3600 / 60), s2 = sec % 60;
+  return (h ? h + ':' + String(m).padStart(2, '0') : m) + ':' + String(s2).padStart(2, '0'); };
 function closePlayer() {
   if (!fpEl) return;
   const v = $('video', fpEl); if (fpEl._save) fpEl._save(); stopVideo(v);
+  if (document.fullscreenElement) { try { document.exitFullscreen(); } catch (e) {} }
   fpEl.remove(); fpEl = null;
+  if (S.onPlayerClose) { try { S.onPlayerClose(); } catch (e) {} }
+}
+// progress state of one item: 'done', 'part' (started, not finished) or ''
+function progState(pid) { const p = progAll()[pid]; if (!p || !p.d) return ''; if (p.done || p.t / p.d >= 0.93) return 'done'; return p.t > 20 ? 'part' : ''; }
+// "Continue watching" or "Start from the beginning" when there is saved progress
+function askResume(pid, title, go) {
+  const p = progAll()[pid];
+  if (!p || !p.d || p.t < 30 || progState(pid) === 'done') { go(0); return; }
+  const bg = document.createElement('div'); bg.className = 'sheet-bg';
+  bg.innerHTML = `<div class="sheet"><div class="grab"></div><h3 dir="auto">${esc(title)}</h3>
+    <div class="resbar"><i style="width:${Math.min(100, p.t / p.d * 100)}%"></i></div>
+    <div class="reslbl">Stopped at <b>${clock(p.t)}</b> of ${clock(p.d)}</div>
+    <button class="btn red" id="rc">${I.play} Continue watching from ${clock(p.t)}</button>
+    <button class="btn ghost" id="r0" style="margin-top:10px">Start from the beginning</button></div>`;
+  document.body.appendChild(bg);
+  bg.onclick = (e) => { if (e.target === bg) bg.remove(); };
+  $('#rc', bg).onclick = () => { bg.remove(); go(p.t); };
+  $('#r0', bg).onclick = () => { bg.remove(); go(0); };
+  setTimeout(() => $('#rc', bg).focus(), 50);
 }
 function openPlayer(o) {
   closePlayer();
-  const prev = progAll()[o.pid];
-  const start = prev && prev.t > 30 && prev.t / prev.d < 0.95 ? prev.t : 0;
-  fpEl = document.createElement('div'); fpEl.className = 'fp';
-  fpEl.innerHTML = `<div class="top"><button class="ibtn" id="fpx">${I.back}</button><h3 dir="auto">${esc(o.title)}</h3>
-    <button class="ibtn" id="fpf">${I.full}</button></div>
-    <div class="vw"><video playsinline webkit-playsinline controls autoplay></video><div class="vmsg hidden"></div>
-    <div class="nextb hidden"><button class="btn red">${I.play} Next episode</button></div></div>`;
+  const start = o.start || 0;
+  fpEl = document.createElement('div'); fpEl.className = 'fp' + (o.live ? ' islive' : '');
+  fpEl.innerHTML = `<div class="vw"><video playsinline webkit-playsinline autoplay ${o.live ? 'controls' : ''}></video><div class="vmsg hidden"></div>
+    <div class="pctl">
+      <div class="ptop"><button class="ibtn" id="fpx">${I.back}</button><h3 dir="auto">${esc(o.title)}</h3><button class="ibtn" id="fpf">${I.full}</button></div>
+      ${o.live ? '' : `<div class="pmid"><button class="pbig sm" id="pb10" aria-label="Back 10 seconds">${I2.back10}</button>
+        <button class="pbig" id="ppl" aria-label="Play or pause">${I2.pause}</button>
+        <button class="pbig sm" id="pf10" aria-label="Forward 10 seconds">${I2.fwd10}</button></div>
+      <div class="pbot"><div class="ptime"><span id="pcur">0:00</span><span id="pdur">0:00</span></div>
+        <div class="pseek" id="pseek"><div class="pbuf" id="pbuf"></div><div class="pfill" id="pfill"></div><div class="pknob" id="pknob"></div><div class="ptip hidden" id="ptip"></div></div>
+        <div class="prow"><button class="ibtn" id="pvol">${I2.vol}</button><span class="ptitle2" dir="auto">${esc(o.title)}</span>
+          ${o.next ? `<button class="btn red pnext" id="pnx">${I2.next} Next episode</button>` : ''}</div></div>`}
+    </div></div>`;
   document.body.appendChild(fpEl);
-  const v = $('video', fpEl);
-  $('#fpx', fpEl).onclick = closePlayer;
-  $('#fpf', fpEl).onclick = () => goFull(v);
-  if (o.live) playLive(v, o.live, $('.vmsg', fpEl)); else loadVideo(v, o.url, { msg: $('.vmsg', fpEl), start });
-  if (start) toast('Resuming from ' + fmtTime(start));
-  const save = () => { if (v.duration && isFinite(v.duration) && v.currentTime > 5)
-    progSet(o.pid, { t: v.currentTime, d: v.duration, title: o.title, img: o.img, kind: o.kind, sid: o.sid, ext: o.ext, series: o.series }); };
-  fpEl._save = save;
-  const iv = setInterval(save, 5000);
-  v.addEventListener('emptied', () => {}, { once: true });
-  const nb = $('.nextb', fpEl);
-  if (o.next) {
-    v.addEventListener('timeupdate', () => { if (v.duration && v.duration - v.currentTime < 40) nb.classList.remove('hidden'); });
-    $('button', nb).onclick = () => { save(); clearInterval(iv); o.next(); };
-    v.addEventListener('ended', () => { save(); clearInterval(iv); setTimeout(() => o.next && o.next(), 800); });
-  }
-  const oldRemove = fpEl.remove.bind(fpEl);
-  fpEl.remove = () => { clearInterval(iv); oldRemove(); };
+  const v = $('video', fpEl), root = fpEl;
+  $('#fpx', root).onclick = closePlayer;
+  $('#fpf', root).onclick = () => { const el = root; if (el.requestFullscreen && !document.fullscreenElement) el.requestFullscreen().catch(() => goFull(v)); else if (document.fullscreenElement) document.exitFullscreen(); else goFull(v); };
+  if (o.live) { playLive(v, o.live, $('.vmsg', root)); return; }
+  loadVideo(v, o.url, { msg: $('.vmsg', root), start });
+  // ---- controls ----
+  let hideT;
+  const show = () => { root.classList.add('ui'); clearTimeout(hideT); hideT = setTimeout(() => { if (!v.paused && !dragging) root.classList.remove('ui'); }, 3200); };
+  show();
+  const ppl = $('#ppl', root), seek = $('#pseek', root), fill = $('#pfill', root), knob = $('#pknob', root), buf = $('#pbuf', root), tip = $('#ptip', root);
+  const toggle = () => { if (v.paused) v.play().catch(() => {}); else v.pause(); show(); };
+  const jump = (d) => { if (!isFinite(v.duration)) return; v.currentTime = Math.max(0, Math.min(v.duration - 1, v.currentTime + d)); show(); flash(d > 0 ? '+' + d + 's' : d + 's'); };
+  const flash = (t) => { const f = document.createElement('div'); f.className = 'pflash'; f.textContent = t; root.appendChild(f); setTimeout(() => f.remove(), 700); };
+  ppl.onclick = toggle; $('#pb10', root).onclick = () => jump(-10); $('#pf10', root).onclick = () => jump(10);
+  $('#pvol', root).onclick = () => { v.muted = !v.muted; $('#pvol', root).innerHTML = v.muted ? I2.mute : I2.vol; show(); };
+  v.addEventListener('play', () => { ppl.innerHTML = I2.pause; show(); });
+  v.addEventListener('pause', () => { ppl.innerHTML = I.play; root.classList.add('ui'); });
+  const paint = (t) => { const d = v.duration || 0; const pct = d ? Math.min(100, t / d * 100) : 0;
+    fill.style.width = pct + '%'; knob.style.left = pct + '%'; $('#pcur', root).textContent = clock(t); $('#pdur', root).textContent = '-' + clock(Math.max(0, d - t)); };
+  v.addEventListener('timeupdate', () => { if (!dragging) paint(v.currentTime);
+    try { if (v.buffered.length && v.duration) buf.style.width = Math.min(100, v.buffered.end(v.buffered.length - 1) / v.duration * 100) + '%'; } catch (e) {} });
+  v.addEventListener('loadedmetadata', () => paint(v.currentTime));
+  // big seek bar: drag with mouse or finger
+  let dragging = false;
+  const posAt = (x) => { const r = seek.getBoundingClientRect(); return Math.max(0, Math.min(1, (x - r.left) / r.width)) * (v.duration || 0); };
+  const down = (e) => { if (!isFinite(v.duration)) return; dragging = true; root.classList.add('dragging'); move(e); e.preventDefault(); };
+  const move = (e) => { if (!dragging) { if (e.type === 'mousemove' && e.target.closest && e.target.closest('#pseek')) { const t = posAt(e.clientX); tip.textContent = clock(t); tip.style.left = (t / v.duration * 100) + '%'; tip.classList.remove('hidden'); } return; }
+    const x = e.touches ? e.touches[0].clientX : e.clientX; const t = posAt(x); paint(t); tip.textContent = clock(t); tip.style.left = (t / v.duration * 100) + '%'; tip.classList.remove('hidden'); show(); };
+  const up = (e) => { if (!dragging) return; dragging = false; root.classList.remove('dragging'); const x = e.changedTouches ? e.changedTouches[0].clientX : e.clientX; v.currentTime = posAt(x); tip.classList.add('hidden'); show(); };
+  seek.addEventListener('mousedown', down); seek.addEventListener('touchstart', down, { passive: false });
+  window.addEventListener('mousemove', move); window.addEventListener('touchmove', move, { passive: true });
+  window.addEventListener('mouseup', up); window.addEventListener('touchend', up);
+  seek.addEventListener('mouseleave', () => { if (!dragging) tip.classList.add('hidden'); });
+  root.addEventListener('mousemove', show);
+  $('.vw', root).addEventListener('click', (e) => { if (e.target.closest('button,.pseek')) return; if (root.classList.contains('ui')) { if (e.target === v || e.target.classList.contains('pctl')) root.classList.remove('ui'); } else show(); });
+  v.addEventListener('dblclick', () => $('#fpf', root).click());
+  const key = (e) => {
+    if (!fpEl || document.querySelector('.sheet-bg')) return;
+    if (e.key === ' ' || e.key === 'k') { e.preventDefault(); e.stopPropagation(); toggle(); }
+    else if (e.key === 'ArrowRight') { e.preventDefault(); e.stopPropagation(); jump(10); }
+    else if (e.key === 'ArrowLeft') { e.preventDefault(); e.stopPropagation(); jump(-10); }
+    else if (e.key === 'ArrowUp') { e.preventDefault(); e.stopPropagation(); v.volume = Math.min(1, v.volume + .1); show(); flash(Math.round(v.volume * 100) + '%'); }
+    else if (e.key === 'ArrowDown') { e.preventDefault(); e.stopPropagation(); v.volume = Math.max(0, v.volume - .1); show(); flash(Math.round(v.volume * 100) + '%'); }
+    else if (e.key === 'f') { $('#fpf', root).click(); }
+    else if (e.key === 'Escape' || e.key === 'Backspace') { e.preventDefault(); e.stopPropagation(); if (document.fullscreenElement) document.exitFullscreen(); else closePlayer(); }
+    else if (e.key === 'Enter') { e.preventDefault(); e.stopPropagation(); toggle(); }
+  };
+  document.addEventListener('keydown', key, true);
+  // ---- progress saving + next episode ----
+  const save = (done) => { if (v.duration && isFinite(v.duration) && (v.currentTime > 5 || done))
+    progSet(o.pid, { t: done ? v.duration : v.currentTime, d: v.duration, done: done || (v.currentTime / v.duration >= 0.93), title: o.title, img: o.img, kind: o.kind, sid: o.sid, ext: o.ext, series: o.series, ep: o.epLabel }); };
+  root._save = () => save(false);
+  const iv = setInterval(() => save(false), 5000);
+  if (o.next) $('#pnx', root).onclick = () => { save(false); o.next(); };
+  v.addEventListener('ended', () => { save(true); if (o.next) { flash('Next episode'); setTimeout(() => o.next && o.next(), 900); } else root.classList.add('ui'); });
+  const oldRemove = root.remove.bind(root);
+  root.remove = () => { clearInterval(iv); clearTimeout(hideT); document.removeEventListener('keydown', key, true);
+    window.removeEventListener('mousemove', move); window.removeEventListener('touchmove', move); window.removeEventListener('mouseup', up); window.removeEventListener('touchend', up); oldRemove(); };
 }
 
 /* ---------------- movies / series grids ---------------- */
@@ -702,6 +833,7 @@ function posterCard(it, isV) {
   const r = parseFloat(it.rating_5based || 0) ? (parseFloat(it.rating_5based) * 2).toFixed(1) : (parseFloat(it.rating) ? parseFloat(it.rating).toFixed(1) : '');
   return `<button class="pc" data-go="${isV ? '#/movie/' : '#/show/'}${esc(id)}">
     <div class="po" ${pic ? `style="background-image:url('${esc(pic)}')"` : ''}>${pic ? '' : `<div class="ph" dir="auto">${esc(it.name)}</div>`}${r && r !== '0.0' ? `<span class="rt">★ ${r}</span>` : ''}</div>
+    ${isV ? (() => { const st = progState('m' + id); if (st === 'done') return '<span class="pmark done">✓</span>'; const pr = progAll()['m' + id]; return st === 'part' ? `<i class="pprog"><b style="width:${Math.min(100, pr.t / pr.d * 100)}%"></b></i>` : ''; })() : ''}
     <div class="t" dir="auto">${esc(it.name)}</div></button>`;
 }
 function posterGrid(el, items, isV) {
@@ -731,15 +863,14 @@ async function renderMovie(id) {
       <div class="pst" style="background-image:url('${esc(poster)}')"></div>
       <div><h2 dir="auto">${esc(name)}</h2><div class="meta">${year ? `<span>${esc(year)}</span>` : ''}${rating ? `<span class="g">★ ${rating}</span>` : ''}
       ${info.duration ? `<span>${esc(info.duration)}</span>` : ''}${info.genre ? `<span>${esc(info.genre)}</span>` : ''}</div></div></div></div>
-    <div class="dbody"><div class="acts"><button class="btn red" id="pl">${I.play} ${resume ? 'Resume ' + fmtTime(pr.t) : 'Play'}</button>
+    <div class="dbody"><div class="acts"><button class="btn red" id="pl">${I.play} ${resume ? 'Continue · ' + fmtTime(pr.d - pr.t) + ' left' : (progState(pid) === 'done' ? 'Watch again' : 'Play')}</button>
       <button class="ibtn ${isFav('movie', md.stream_id) ? 'on' : ''}" id="fv">${isFav('movie', md.stream_id) ? I.star : I.starO}</button></div>
-      ${resume ? '<button class="btn ghost" id="pl0">Play from beginning</button>' : ''}
+      ${progState(pid) === 'done' ? '<div class="wbadge done">✓ Watched</div>' : (resume ? `<div class="resbar big"><i style="width:${Math.min(100, pr.t / pr.d * 100)}%"></i></div>` : '')}
       <p dir="auto">${esc(info.plot || info.description || '')}</p>
       ${info.cast ? `<p dir="auto"><b style="color:var(--silver)">Cast:</b> ${esc(info.cast)}</p>` : ''}
       ${info.director ? `<p dir="auto"><b style="color:var(--silver)">Director:</b> ${esc(info.director)}</p>` : ''}</div>`;
-  const go = () => openPlayer({ title: name, url: playUrl('movie', md.stream_id, md.container_extension || 'mp4'), pid, img: bd || poster, kind: 'movie', sid: md.stream_id, ext: md.container_extension || 'mp4' });
-  $('#pl').onclick = go;
-  if ($('#pl0')) $('#pl0').onclick = () => { progSet(pid, { t: 0 }); go(); };
+  const go = (st) => openPlayer({ title: name, url: playUrl('movie', md.stream_id, md.container_extension || 'mp4'), pid, img: bd || poster, kind: 'movie', sid: md.stream_id, ext: md.container_extension || 'mp4', start: st });
+  $('#pl').onclick = () => askResume(pid, name, go);
   $('#fv').onclick = (e) => { const b = e.currentTarget;
     const raw = { stream_id: md.stream_id, name, stream_icon: poster, rating: info.rating };
     const on = toggleFav('movie', { id: md.stream_id, raw }); b.classList.toggle('on', on); b.innerHTML = on ? I.star : I.starO; toast(on ? 'Added to favorites' : 'Removed from favorites'); };
@@ -772,13 +903,15 @@ async function renderShow(id) {
   if (!seasons.length) { $('#eps').innerHTML = empty('No episodes yet'); $('#pl').disabled = true; }
   const flat = []; seasons.forEach(s => (eps[s] || []).forEach(e => flat.push(Object.assign({ _s: s }, e))));
   const epTitle = (e) => `S${e._s || e.season} E${e.episode_num} · ${e.title || ''}`.replace(/ · $/, '');
-  function playEp(e) {
+  function playEp(e, ask) {
     const idx = flat.indexOf(e);
     const nx = flat[idx + 1];
     const i = e.info || {};
-    openPlayer({ title: name + ' - ' + epTitle(e), url: playUrl('series', e.id, e.container_extension || 'mp4'), pid: 'e' + e.id,
-      img: img(i.movie_image) || bd || cover, kind: 'ep', series: id, sid: e.id, ext: e.container_extension,
-      next: nx ? () => playEp(nx) : null });
+    const go = (st) => { openPlayer({ title: name + ' - ' + epTitle(e), url: playUrl('series', e.id, e.container_extension || 'mp4'), pid: 'e' + e.id,
+      img: img(i.movie_image) || bd || cover, kind: 'ep', series: id, sid: e.id, ext: e.container_extension, start: st,
+      next: nx ? () => { playEp(nx, false); } : null });
+};
+    if (ask === false) go(0); else askResume('e' + e.id, name + ' - ' + epTitle(e), go);
   }
   function drawSeason() {
     store.set('lastSeason_' + id, season);
@@ -786,21 +919,28 @@ async function renderShow(id) {
     $$('#ssn .chip').forEach(b => b.onclick = () => { season = b.dataset.s; drawSeason(); });
     const pa = progAll();
     const list = flat.filter(e => String(e._s) === String(season));
-    $('#eps').innerHTML = list.map(e => { const i = e.info || {}; const p = pa['e' + e.id];
-      return `<button class="ep" data-e="${flat.indexOf(e)}"><div class="th" style="background-image:url('${esc(img(i.movie_image) || cover)}')"><div class="pl">${I.play}</div>
-        ${p && p.d ? `<div class="prog" style="width:${Math.min(100, p.t / p.d * 100)}%"></div>` : ''}</div>
-        <div class="i"><b dir="auto">${esc(e.episode_num + '. ' + (e.title || 'Episode ' + e.episode_num))}</b>
+    let lastId = null, lastTs = 0; flat.forEach(e => { const p = pa['e' + e.id]; if (p && p.ts > lastTs) { lastTs = p.ts; lastId = e.id; } });
+    $('#eps').innerHTML = list.map(e => { const i = e.info || {}; const p = pa['e' + e.id]; const st = progState('e' + e.id);
+      const badge = st === 'done' ? '<span class="wbadge done">✓ Watched</span>' : (st === 'part' ? `<span class="wbadge part">● In progress · ${fmtTime(p.d - p.t)} left</span>` : '');
+      return `<button class="ep ${st} ${e.id === lastId ? 'last' : ''}" data-e="${flat.indexOf(e)}"><div class="th" style="background-image:url('${esc(img(i.movie_image) || cover)}')"><div class="pl">${st === 'done' ? '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12l5 5 9-10"/></svg>' : I.play}</div>
+        ${p && p.d ? `<div class="prog" style="width:${st === 'done' ? 100 : Math.min(100, p.t / p.d * 100)}%"></div>` : ''}</div>
+        <div class="i"><b dir="auto">${esc(e.episode_num + '. ' + (e.title || 'Episode ' + e.episode_num))}</b>${e.id === lastId ? '<span class="wbadge last">Last watched</span>' : ''}${badge}
         <small dir="auto">${esc([i.duration, i.plot].filter(Boolean).join(' · '))}</small></div></button>`; }).join('') || empty('No episodes');
     $$('#eps .ep').forEach(b => b.onclick = () => playEp(flat[+b.dataset.e]));
   }
   if (seasons.length) drawSeason();
+  const label = () => { const pa = progAll(); let best = null; flat.forEach(e => { const p = pa['e' + e.id]; if (p && (!best || p.ts > best.p.ts)) best = { e, p }; });
+    if (best && $('#pl')) { const done = progState('e' + best.e.id) === 'done'; const k = flat.indexOf(best.e); const tgt = done && flat[k + 1] ? flat[k + 1] : best.e;
+      $('#pl').innerHTML = `${I.play} ${done ? 'Play' : 'Continue'} S${tgt._s} E${tgt.episode_num}`; } };
+  label();
+  S.onPlayerClose = () => { if ($('#eps')) { drawSeason(); label(); } };
   $('#pl').onclick = () => {
     if (!flat.length) return;
     const pa = progAll();
     // continue the last watched episode, else the first one
     let best = null; flat.forEach(e => { const p = pa['e' + e.id]; if (p && (!best || p.ts > best.p.ts)) best = { e, p }; });
-    if (best) { const done = best.p.d && best.p.t / best.p.d >= 0.95; const k = flat.indexOf(best.e); playEp(done && flat[k + 1] ? flat[k + 1] : best.e); }
-    else playEp(flat[0]);
+    if (best) { const done = progState('e' + best.e.id) === 'done'; const k = flat.indexOf(best.e); playEp(done && flat[k + 1] ? flat[k + 1] : best.e); }
+    else playEp(flat[0], false);
   };
   $('#fv').onclick = (e) => { const b = e.currentTarget;
     const on = toggleFav('series', { id, raw: { series_id: id, name, cover, rating: info.rating } });
@@ -850,7 +990,7 @@ async function renderNew() {
 }
 
 /* ---------------- keyboard / remote navigation (arrows move the focus, Enter opens) ---------------- */
-const NAV_SEL = '.tile,.cat,.row,.pc,.ep,.cw,.ibtn,.catbtn,.newbtn,.chip,.btn,.srv,.input,.star.on';
+const NAV_SEL = '.pbig,.tile,.cat,.row,.pc,.ep,.cw,.ibtn,.catbtn,.newbtn,.chip,.btn,.srv,.input,.star.on';
 function navCandidates() {
   let scope = document;
   const tv = document.querySelector('.livebox.tv'); if (tv) scope = tv;
