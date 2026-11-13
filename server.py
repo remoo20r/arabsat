@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Arab Sat web player - tiny server (Python stdlib only).
+"""Arabesk TV web player - tiny server (Python stdlib only).
 
 * Serves the web app from ./public
 * /api/servers            -> list of server NAMES (hosts stay hidden here)
@@ -203,7 +203,7 @@ CACHEABLE = {
 
 
 class Handler(SimpleHTTPRequestHandler):
-    server_version = "ArabSat/1.0"
+    server_version = "ArabeskTV/1.0"
 
     def __init__(self, *a, **kw):
         super().__init__(*a, directory=PUBLIC, **kw)
@@ -334,7 +334,7 @@ class Handler(SimpleHTTPRequestHandler):
             return self.send_json({"pending": True})
         s = rec["s"]
         if str(s).startswith("c"):
-            name = rec.get("name") or "Arab Sat"
+            name = rec.get("name") or "Arabesk TV"
         else:
             servers = load_servers()
             s = int(s)
@@ -470,7 +470,7 @@ class Handler(SimpleHTTPRequestHandler):
                     return self.send_json({"ok": False, "error": "url"})
                 host = "%s://%s" % (pu.scheme, pu.netloc)
                 s = "c" + code
-                sname = str(body.get("name") or "").strip()[:40] or "Arab Sat"
+                sname = str(body.get("name") or "").strip()[:40] or "Arabesk TV"
             else:
                 s = int(body.get("s", -1))
                 host = self.server_host(s)
@@ -602,5 +602,5 @@ class Handler(SimpleHTTPRequestHandler):
 if __name__ == "__main__":
     ThreadingHTTPServer.daemon_threads = True
     httpd = ThreadingHTTPServer((BIND, PORT), Handler)
-    print("Arab Sat on port %d" % PORT, flush=True)
+    print("Arabesk TV on port %d" % PORT, flush=True)
     httpd.serve_forever()

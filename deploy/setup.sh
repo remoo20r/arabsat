@@ -1,5 +1,5 @@
 #!/bin/bash
-# Arab Sat - install on a Debian/Ubuntu server (run as root). Safe to re-run.
+# Arabesk TV - install on a Debian/Ubuntu server (run as root). Safe to re-run.
 # Needs /opt/arabsat/servers.json (server names + hosts), which is NOT in git.
 set -e
 apt-get update -y >/dev/null && apt-get install -y git python3 python3-cryptography curl >/dev/null
@@ -13,7 +13,7 @@ id arabsat >/dev/null 2>&1 || useradd -r -s /usr/sbin/nologin arabsat
 chown -R arabsat:arabsat /opt/arabsat
 cat > /etc/systemd/system/arabsat.service <<UNIT
 [Unit]
-Description=Arab Sat web player
+Description=Arabesk TV web player
 After=network-online.target
 Wants=network-online.target
 [Service]
@@ -41,14 +41,14 @@ UPD
 chmod +x /usr/local/bin/arabsat-update
 cat > /etc/systemd/system/arabsat-update.service <<UNIT
 [Unit]
-Description=Arab Sat auto update
+Description=Arabesk TV auto update
 [Service]
 Type=oneshot
 ExecStart=/usr/local/bin/arabsat-update
 UNIT
 cat > /etc/systemd/system/arabsat-update.timer <<UNIT
 [Unit]
-Description=Arab Sat auto update timer
+Description=Arabesk TV auto update timer
 [Timer]
 OnBootSec=2min
 OnUnitActiveSec=5min

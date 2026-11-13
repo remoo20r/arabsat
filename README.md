@@ -1,4 +1,4 @@
-# Arab Sat - web IPTV player
+# Arabesk TV - web IPTV player
 
 Web version of the ArabeskTV / BellaTV app (same black, red and silver look) for iPhone, iPad and any browser.
 Open the link in Safari, then Share > Add to Home Screen.

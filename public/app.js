@@ -63,7 +63,7 @@ const playUrl = (kind, id, ext) =>
   `/play/${S.acc.s}/${kind}/${encodeURIComponent(S.acc.u)}/${encodeURIComponent(S.acc.p)}/${id}.${ext || 'm3u8'}`;
 
 /* ---------------- shared bits ---------------- */
-const logoHTML = (sm) => `<div class="logo"><img src="icon-192.png" alt=""><div><div class="w">ARABESK <b>TV</b></div>${sm ? '' : '<div class="ar">أرابيسك تي في</div>'}</div></div>`;
+const logoHTML = (sm) => `<div class="logo"><img src="icon-192.png?v=3" alt=""><div><div class="w">ARABESK <b>TV</b></div>${sm ? '' : '<div class="ar">أرابيسك تي في</div>'}</div></div>`;
 function bar(title, opts) {
   opts = opts || {};
   return `<div class="bar"><button class="ibtn" data-back>${I.back}</button><h1 dir="auto">${esc(title)}</h1>
@@ -213,7 +213,7 @@ let pollT = null;
 async function renderLogin(err) {
   clearTimeout(pollT);
   if (isIOS && !standalone) {
-    app.innerHTML = `<div class="login"><div class="card"><div class="big"><img src="icon-512.png" alt=""><div class="w">ARABESK <b>TV</b></div><div class="ar">أرابيسك تي في</div></div>
+    app.innerHTML = `<div class="login"><div class="card"><div class="big"><img src="icon-512.png?v=3" alt=""><div class="w">ARABESK <b>TV</b></div><div class="ar">أرابيسك تي في</div></div>
       <div class="howto"><b>Install the app first</b><ol>
         <li>Tap the <b>Share</b> button <span class="shr">⬆︎</span> at the bottom of Safari</li>
         <li>Choose <b>Add to Home Screen</b></li>
@@ -223,7 +223,7 @@ async function renderLogin(err) {
     return;
   }
   if (!device()) return renderGetCode(err);
-  app.innerHTML = `<div class="login"><div class="card"><div class="big"><img src="icon-512.png" alt=""><div class="w">ARABESK <b>TV</b></div><div class="ar">أرابيسك تي في</div></div>
+  app.innerHTML = `<div class="login"><div class="card"><div class="big"><img src="icon-512.png?v=3" alt=""><div class="w">ARABESK <b>TV</b></div><div class="ar">أرابيسك تي في</div></div>
     <div class="codebox"><div class="lbl">Your activation code</div><div class="code" id="dc">${spinner()}</div>
       <div class="hint">Send this code to Arabesk customer service to activate your app.</div>
       <div class="hint" dir="rtl">ابعت الكود ده لخدمة عملاء Arabesk علشان يتفعّل التطبيق.</div>
@@ -253,7 +253,7 @@ async function renderLogin(err) {
 // first launch: get a code tied to a Face ID / passcode key, so it never changes
 async function renderGetCode(err) {
   clearTimeout(pollT);
-  app.innerHTML = `<div class="login"><div class="card"><div class="big"><img src="icon-512.png" alt=""><div class="w">ARABESK <b>TV</b></div><div class="ar">أرابيسك تي في</div></div>
+  app.innerHTML = `<div class="login"><div class="card"><div class="big"><img src="icon-512.png?v=3" alt=""><div class="w">ARABESK <b>TV</b></div><div class="ar">أرابيسك تي في</div></div>
     <div class="codebox">
       <div class="hint" style="font-size:15px;color:var(--text)">Tap the button and confirm with <b>Face ID</b> or your <b>phone passcode</b> to get your activation code.</div>
       <div class="hint" dir="rtl" style="font-size:15px">دوس على الزرار وأكّد ببصمة الوش أو الرقم السري بتاع الموبايل علشان تاخد كود التفعيل.</div>
@@ -560,7 +560,7 @@ function renderHome() {
   const card = (key, title, sub, go, icon) => `<button class="tile hcard hc-${key}" data-go="${go}" data-nav="${key}" data-rb>
       <span class="hc-tab"></span><span class="hc-t">${title}</span><span class="hc-scene">${icon}</span></button>`;
   app.innerHTML = `<div class="home home2 home3"><div class="hbg" id="hbg"></div>
-    <div class="htop"><div class="hlogo"><img src="icon-192.png" alt=""><div><div class="w">ARABESK <b>TV</b></div><div class="ar">أرابيسك تي في</div></div></div>
+    <div class="htop"><div class="hlogo"><img src="icon-192.png?v=3" alt=""><div><div class="w">ARABESK <b>TV</b></div><div class="ar">أرابيسك تي في</div></div></div>
       <div class="hact"><button class="ibtn" data-go="#/search" data-nav="srch" data-rb>${I.search}</button><button class="ibtn" id="rf" data-nav="rf" data-rb>${I.refresh}</button><button class="ibtn" id="st" data-nav="st" data-rb>${I.gear}</button></div></div>
     <div class="h3wrap"><div class="h3grid">
       ${card('live', 'Live TV', 'Channels', '#/live', SCN.live)}
@@ -663,7 +663,7 @@ const icoMenu = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stro
 function sideLayout(title, extraBar, opts) {
   opts = opts || {};
   return `<div class="bar"><button class="ibtn" data-back>${I.back}</button>
-    <div class="ttl"><img src="icon-192.png" alt="" class="ttl-logo"><h1 dir="auto">${esc(title)}</h1></div>
+    <div class="ttl"><img src="icon-192.png?v=3" alt="" class="ttl-logo"><h1 dir="auto">${esc(title)}</h1></div>
     <div class="barclock"><b id="bck"></b><span id="bcd"></span></div>
     <button class="catbtn" id="catbtn">${icoMenu}<span id="catname" dir="auto"></span></button>
     <button class="ibtn" data-go="#/search">${I.search}</button>${extraBar || ''}</div>
