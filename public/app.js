@@ -420,6 +420,103 @@ const SCN = {
     <path d="M10 150v-9c0-5 5-7 11-7h178c6 0 11 2 11 7v9z" fill="#4a161c" stroke="#6b2028" stroke-width="2"/>
     <path d="M24 144h172" stroke="#6b2028" stroke-width="2" stroke-linecap="round"/></svg>`,
 };
+/* seated person, side view facing right (same drawing as the Live TV man). hip at (x,y) */
+const shade = (c) => '#' + c.replace('#', '').match(/../g).map(h => Math.max(0, parseInt(h, 16) - 28).toString(16).padStart(2, '0')).join('');
+function P(o) {
+  const sk = o.skin || '#c58f6a', sh = o.shirt || '#b51d2e', hc = o.hairC || '#2a1a12', pa = o.pants || '#1d2230';
+  const longHair = o.hair === 'long', kid = o.kid;
+  return `<g transform="translate(${o.x} ${o.y}) scale(${o.s || 1})"><g class="pp ${o.cls || ''}">
+    <g class="pab">${o.armB || `<path d="M-2 -29l7 18 12 3" stroke="${shade(sh)}" stroke-width="7" fill="none" stroke-linecap="round" stroke-linejoin="round"/><circle cx="18" cy="-8" r="4" fill="${sk}"/>`}</g>
+    ${longHair ? `<path d="M-12 -50c0-10 7-14 13-13 5 1 9 4 9 8-7-3-13-1-14 6-1 7 0 15 2 22h-9c-3-8-2-16-1-23z" fill="${hc}"/>` : ''}
+    <path d="M-14 -26q2-11 12-11h4q10 0 10 12l-2 26H-14z" fill="${sh}"/>
+    <path d="M-10 0h36" stroke="${pa}" stroke-width="11" stroke-linecap="round"/>
+    <path d="M26 0l4 20" stroke="${pa}" stroke-width="10" stroke-linecap="round"/>
+    <path d="M25 19h13a3 3 0 0 1 0 6H25z" fill="#0d0d10"/>
+    <rect x="-4" y="-43" width="7" height="8" rx="2" fill="${shade(sk)}"/>
+    <g class="phd"><circle cx="0" cy="-49" r="10" fill="${sk}"/>
+      ${longHair ? `<path d="M-10 -51a10 10 0 0 1 19-4c-4-2-8-2-11 0-3 1-5 3-8 4z" fill="${hc}"/>` : kid ? `<path d="M-10 -51a10 10 0 0 1 19-5c-4-1-6 1-9 0-3 0-6 2-10 5z" fill="${hc}"/>` : `<path d="M-10 -50a10 10 0 0 1 19-5c-5-3-10-3-14-1-3 1-4 3-5 6z" fill="${hc}"/>`}
+      <circle cx="10.5" cy="-48" r="1.6" fill="${shade(sk)}"/><circle cx="5.5" cy="-50.5" r="1.1" fill="#1a1010"/>
+      <path class="pmo" d="M5 -44.5q2.5 2 5 0" stroke="#5a2a20" stroke-width="1.1" fill="none" stroke-linecap="round"/></g>
+    <g class="paf">${o.armF || `<path d="M2 -29l10 16 16 2" stroke="${shade(sh)}" stroke-width="7" fill="none" stroke-linecap="round" stroke-linejoin="round"/><circle cx="29" cy="-11" r="4" fill="${sk}"/>`}</g>
+  </g></g>`;
+}
+const TVFRAME = (inner, id) => `<rect x="96" y="18" width="116" height="80" rx="10" fill="#1a0b0e" stroke="#C9CED6" stroke-width="3"/>
+  <rect x="103" y="25" width="102" height="66" rx="5" fill="#050203"/>
+  <clipPath id="${id}"><rect x="103" y="25" width="102" height="66" rx="5"/></clipPath><g clip-path="url(#${id})">${inner}</g>
+  <path d="M136 98l-6 10M172 98l6 10" stroke="#C9CED6" stroke-width="3" stroke-linecap="round"/>`;
+SCN.movies = `<svg viewBox="0 0 220 150" class="sc sc-mov2" aria-hidden="true"><defs>
+  <radialGradient id="m2V" cx=".5" cy=".5" r=".72"><stop offset=".55" stop-color="#000" stop-opacity="0"/><stop offset="1" stop-color="#000" stop-opacity=".75"/></radialGradient>
+  <linearGradient id="m2B" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#fff6d8" stop-opacity=".0"/><stop offset="1" stop-color="#fff6d8" stop-opacity=".22"/></linearGradient>
+  <linearGradient id="m2C" x1="0" x2="1"><stop offset="0" stop-color="#6d0c18"/><stop offset=".5" stop-color="#C21F33"/><stop offset="1" stop-color="#6d0c18"/></linearGradient>
+  <clipPath id="m2K"><rect x="103" y="25" width="102" height="66"/></clipPath></defs>
+  <path class="m2-beam" d="M4 40L103 25v66z" fill="url(#m2B)"/>
+  <rect x="98" y="20" width="112" height="76" rx="3" fill="#0d0507" stroke="#D4AF37" stroke-width="2.5"/>
+  <rect x="122" y="6" width="64" height="12" rx="4" fill="#1a0b0e" stroke="#D4AF37" stroke-width="1.6"/>
+  <text x="154" y="15" text-anchor="middle" font-size="7.5" font-weight="900" fill="#F3D98B" letter-spacing="2.5" font-family="system-ui,sans-serif">CINEMA</text>
+  ${Array.from({ length: 7 }, (_, i) => `<circle class="mv-b ${i % 2 ? 'o' : 'e'}" cx="${127 + i * 9}" cy="19.5" r="1.4"/>`).join('')}
+  <g clip-path="url(#m2K)"><g class="m2-film">
+    <rect x="103" y="25" width="102" height="66" fill="#c9c9c9"/>
+    <path d="M103 62h14V44h10v18h8V36h12v26h10V48h9v14h10V40h11v22h8v29H103z" fill="#9b9b9b"/>
+    <rect x="103" y="73" width="102" height="18" fill="#7d7d7d"/><path d="M103 73h102" stroke="#5f5f5f" stroke-width="1"/>
+    <path d="M182 73V47" stroke="#2b2b2b" stroke-width="1.6"/><circle cx="182" cy="46" r="3.4" fill="#f2f2f2" stroke="#2b2b2b" stroke-width="1"/>
+    <g class="m2-walk"><g class="m2-bob">
+      <path class="m2-l1" d="M0 0l-3 9" stroke="#111" stroke-width="2.2" stroke-linecap="round"/>
+      <path class="m2-l2" d="M0 0l3 9" stroke="#111" stroke-width="2.2" stroke-linecap="round"/>
+      <path d="M-4 -14h8l1 14h-10z" fill="#1c1c1c"/>
+      <circle cx="0" cy="-17.5" r="3.4" fill="#e6e6e6"/>
+      <path d="M-4.2 -20h8.4M-2.8 -20v-5h5.6v5" stroke="#111" stroke-width="1.6" fill="#111"/>
+      <path class="m2-cane" d="M4 -9l6 9" stroke="#3a3a3a" stroke-width="1.2" stroke-linecap="round"/>
+    </g></g>
+    <g class="m2-grain" fill="#fff" opacity=".5">${Array.from({ length: 14 }, (_, i) => `<circle cx="${105 + (i * 37) % 98}" cy="${28 + (i * 23) % 60}" r=".6"/>`).join('')}</g>
+    <path class="m2-scr1" d="M128 25v66" stroke="#fff" stroke-width=".7" opacity=".55"/><path class="m2-scr2" d="M176 25v66" stroke="#222" stroke-width=".6" opacity=".5"/>
+    <rect x="103" y="25" width="102" height="66" fill="url(#m2V)"/>
+    <rect class="m2-flk" x="103" y="25" width="102" height="66" fill="#fff"/>
+  </g></g>
+  <path d="M103 25h18c-4 10-6 22-3 34 2 10 0 22-3 32h-12z" fill="url(#m2C)"/><path d="M205 25h-18c4 10 6 22 3 34-2 10 0 22 3 32h12z" fill="url(#m2C)"/>
+  <path d="M100 22h108v6c-6 4-12 4-18 0-6 4-12 4-18 0-6 4-12 4-18 0-6 4-12 4-18 0-6 4-12 4-18 0-6 4-12 4-18 0z" fill="#5c0a14"/>
+  <rect x="8" y="80" width="26" height="62" rx="8" fill="#7a1220" stroke="#9c1c2c" stroke-width="1.5"/>
+  <rect x="34" y="84" width="26" height="58" rx="8" fill="#8E121F" stroke="#ad2233" stroke-width="1.5"/>
+  ${P({ x: 30, y: 116, s: .9, shirt: '#2f5d8a', hair: 'long', hairC: '#4a2a14', skin: '#d9a77e', cls: 'm2-wom',
+    armF: `<path d="M2 -29l10 15 14 3" stroke="#264d73" stroke-width="7" fill="none" stroke-linecap="round" stroke-linejoin="round"/><circle cx="27" cy="-11" r="4" fill="#d9a77e"/>` })}
+  <rect x="10" y="114" width="60" height="14" rx="5" fill="#6b0f1b"/>
+  ${P({ x: 52, y: 121, s: .95, shirt: '#b51d2e', cls: 'm2-man',
+    armB: `<path d="M-2 -29l7 18 13 2" stroke="#9e1626" stroke-width="7" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+      <g class="m2-pop"><path d="M12 -20h16l-2 16h-12z" fill="#fff"/><path d="M15 -20l1 16M20 -20v16M25 -20l-1 16" stroke="#D32436" stroke-width="2.4"/>
+      <circle cx="15" cy="-22" r="2.6" fill="#fff4cf"/><circle cx="20" cy="-23.5" r="2.8" fill="#fff8e1"/><circle cx="25" cy="-22" r="2.6" fill="#fff4cf"/>
+      <circle class="m2-k k1" cx="18" cy="-24" r="1.6" fill="#fff8e1"/><circle class="m2-k k2" cx="23" cy="-24" r="1.5" fill="#fff4cf"/></g>
+      <circle cx="18" cy="-9" r="4" fill="#c58f6a"/>`,
+    armF: `<g class="m2-eat"><path d="M2 -29l10 14 9-3" stroke="#c42234" stroke-width="7" fill="none" stroke-linecap="round" stroke-linejoin="round"/><circle cx="22" cy="-13" r="4" fill="#c58f6a"/></g>` })}
+  <rect x="58" y="106" width="16" height="10" rx="5" fill="#9c1c2c"/>
+  <rect x="12" y="128" width="5" height="16" fill="#3a0a12"/><rect x="62" y="128" width="5" height="16" fill="#3a0a12"/></svg>`;
+SCN.series = `<svg viewBox="0 0 220 150" class="sc sc-ser2" aria-hidden="true"><defs>
+  <linearGradient id="s2S" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#050b1f"/><stop offset="1" stop-color="#1b2a52"/></linearGradient>
+  <linearGradient id="s2H" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#fff3b0" stop-opacity=".95"/><stop offset="1" stop-color="#fff3b0" stop-opacity="0"/></linearGradient>
+  <linearGradient id="s2HL" x1="1" y1="0" x2="0" y2="0"><stop offset="0" stop-color="#ffffff" stop-opacity="1"/><stop offset="1" stop-color="#eaf2ff" stop-opacity="0"/></linearGradient>
+  <radialGradient id="s2G" cx=".5" cy=".5" r=".5"><stop offset="0" stop-color="#9fc2ff" stop-opacity=".35"/><stop offset="1" stop-color="#9fc2ff" stop-opacity="0"/></radialGradient></defs>
+  <ellipse class="s2-glow" cx="70" cy="95" rx="70" ry="50" fill="url(#s2G)"/>
+  <path d="M144 18l-10-12M164 18l10-12" stroke="#C9CED6" stroke-width="3" stroke-linecap="round"/>
+  ${TVFRAME(`<rect x="103" y="25" width="102" height="66" fill="url(#s2S)"/>
+    <circle cx="190" cy="34" r="5" fill="#f3e7c0"/><circle cx="188" cy="33" r="5" fill="#0d1734" opacity=".35"/>
+    <g fill="#fff">${[[112, 31], [128, 36], [150, 29], [166, 38], [176, 30], [140, 41]].map(([x, y]) => `<circle class="s2-st" cx="${x}" cy="${y}" r=".7"/>`).join('')}</g>
+    <path d="M103 60l18-9 16 6 20-11 18 8 14-6 16 8v6H103z" fill="#0a1124"/>
+    <rect x="103" y="61" width="102" height="30" fill="#1d2027"/>
+    <path d="M103 75.5h102" stroke="#F3D98B" stroke-width="1.2" stroke-dasharray="6 6" class="s2-lane"/>
+    <g class="s2-carB"><path class="s2-hb" d="M-2 65L-46 58v16z" fill="url(#s2HL)"/>
+      <path d="M0 70h22v-4l-4-5h-11l-5 4h-2z" fill="#d9dde3"/><path d="M8 62h9l3 4H6z" fill="#7aa6d9"/>
+      <circle cx="5" cy="70.5" r="2.6" fill="#111"/><circle cx="18" cy="70.5" r="2.6" fill="#111"/><circle cx="0.8" cy="67" r="1.4" fill="#fff"/><rect x="21" y="66" width="1.6" height="2" fill="#ff3b4e"/></g>
+    <g class="s2-carA"><path class="s2-ha" d="M28 82l40-6v14z" fill="url(#s2H)"/>
+      <path d="M0 87h28v-5l-5-6H10l-6 5H0z" fill="#C21F33"/><path d="M11 77h11l4 4H7z" fill="#9cc0e8"/>
+      <circle cx="6" cy="87.5" r="3" fill="#111"/><circle cx="22" cy="87.5" r="3" fill="#111"/><circle cx="27" cy="83" r="1.5" fill="#fff6c8"/><rect x="0" y="82.5" width="1.8" height="2.2" fill="#ff3b4e"/></g>
+    <rect class="s2-flash" x="103" y="25" width="102" height="66" fill="#fff"/>
+    <rect x="107" y="29" width="25" height="9" rx="2.5" fill="#000" opacity=".5"/><text x="119.5" y="35.8" text-anchor="middle" font-size="5.8" font-weight="800" fill="#F3D98B" font-family="system-ui,sans-serif">EP 12</text>`, 's2K')}
+  <path d="M2 142V92c0-9 6-14 14-14h44c8 0 12 5 12 12v52z" fill="#2c4a5e" stroke="#3d6178" stroke-width="1.5"/>
+  ${P({ x: 26, y: 112, s: .86, shirt: '#3a3f47', cls: 's2-dad' })}
+  ${P({ x: 44, y: 117, s: .88, shirt: '#8a2a6a', hair: 'long', hairC: '#3a1c10', skin: '#d9a77e', cls: 's2-mom',
+    armF: `<g class="s2-gasp"><path d="M2 -29l10 15 14 3" stroke="#6e1f54" stroke-width="7" fill="none" stroke-linecap="round" stroke-linejoin="round"/><circle cx="27" cy="-11" r="4" fill="#d9a77e"/></g>` })}
+  <rect x="2" y="114" width="80" height="15" rx="6" fill="#335a72"/>
+  ${P({ x: 62, y: 123, s: .66, shirt: '#e0a21c', kid: true, hairC: '#5a3416', skin: '#e0b08a', pants: '#2a4a8a', cls: 's2-kid' })}
+  <rect x="64" y="104" width="22" height="12" rx="6" fill="#3d6178"/>
+  <rect x="6" y="128" width="5" height="16" fill="#1b2f3c"/><rect x="72" y="128" width="5" height="16" fill="#1b2f3c"/></svg>`;
 const MOON = '<svg viewBox="0 0 24 24"><path fill="#F3D98B" d="M15.5 2.5a9.5 9.5 0 1 0 6 16.9A8 8 0 0 1 15.5 2.5z"/></svg>';
 const SPARK = '<svg viewBox="0 0 24 24" fill="#F3D98B"><path d="M12 0l2.6 9.4L24 12l-9.4 2.6L12 24l-2.6-9.4L0 12l9.4-2.6z"/></svg>';
 function wxFx(kind, day) {
@@ -480,8 +577,7 @@ function renderHome() {
           <span class="hcontact"><a class="hc-btn hc-call" href="tel:${SUPPORT.tel}" aria-label="Call">${I.phone}<em>Call</em></a>
           <a class="hc-btn hc-wa" href="https://wa.me/${SUPPORT.wa}" target="_blank" rel="noopener" aria-label="WhatsApp">${I.wa}<em>WhatsApp</em></a></span></div>
       </div>
-      <div class="h3cw2">${cw.length ? `<div class="cwl"><i class="cwdot"></i>Continue Watching</div>
-        <button class="cwo" id="cwo" data-nav="cw" data-rb aria-label="Continue Watching"><span class="halo"></span><span class="ov">
+      <div class="h3cw2">${cw.length ? `        <button class="cwo" id="cwo" data-nav="cw" data-rb aria-label="Continue Watching"><span class="halo"></span><span class="ov">
           ${cw.slice(0, 4).map((c, k) => `<span class="sl${k ? '' : ' on'}" data-cw="${esc(c.id)}"><span class="pic" style="background-image:url('${esc(img(c.img))}')"></span>
             <span class="sh"></span><span class="pl">${I.play}</span><span class="tx"><b dir="auto">${esc(c.title)}</b><em>${Math.max(1, Math.round((c.d - c.t) / 60))} min left</em></span>
             <span class="bar"><i style="width:${Math.min(100, c.t / c.d * 100).toFixed(1)}%"></i></span></span>`).join('')}
@@ -1216,7 +1312,7 @@ function renderSearch() {
 
 /* ---------------- new ---------------- */
 async function renderNew() {
-  app.innerHTML = bar('New', { search: true }) + `<div class="chips"><button class="chip on" data-k="v">New Movies</button><button class="chip" data-k="s">New Series</button></div><div id="nw">${spinner()}</div>`;
+  app.innerHTML = `<div class="shead">${bar('New', { search: true })}<div class="chips"><button class="chip on" data-k="v">New Movies</button><button class="chip" data-k="s">New Series</button></div></div><div id="nw">${spinner()}</div>`;
   const d = await loadAll();
   const nv = d.v.slice().sort((a, b) => (+b.added || 0) - (+a.added || 0)).slice(0, 120);
   const ns = d.s.slice().sort((a, b) => (+b.last_modified || 0) - (+a.last_modified || 0)).slice(0, 120);

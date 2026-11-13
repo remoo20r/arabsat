@@ -1055,3 +1055,50 @@ body.light .h3clock .d{color:#6b5558}
 .cwo .bar{top:auto;height:3px;padding:0;margin:0;display:block;border:0;box-shadow:none;backdrop-filter:none}
 .cwo .sl{transition:opacity .5s ease,transform .5s ease;transform:translateX(14px)}
 .cwo .sl.on{transform:none;transition-delay:.25s}
+/* header + tabs stuck together as one block (New page) — nothing can show between them */
+.shead{position:sticky;top:0;z-index:20;background:linear-gradient(180deg,rgba(23,6,10,.98),rgba(12,4,7,.96));backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);border-bottom:1px solid rgba(212,175,55,.18)}
+.shead .bar{position:relative;top:auto;background:none;backdrop-filter:none;-webkit-backdrop-filter:none;border-bottom:0}
+.shead .chips{position:relative;top:auto;background:none;backdrop-filter:none;-webkit-backdrop-filter:none;padding-top:4px}
+body.light .shead{background:linear-gradient(180deg,rgba(255,255,255,.97),rgba(250,246,242,.95))}
+
+/* ---- Movies v2: black & white film in a cinema, couple with popcorn ---- */
+.sc-mov2 .mv-b{fill:#F3D98B;animation:mvb 1s steps(1) infinite}.sc-mov2 .mv-b.o{animation-delay:-.5s}
+.sc-mov2 .m2-beam{animation:m2bm 1.3s ease-in-out infinite}@keyframes m2bm{0%,100%{opacity:.75}50%{opacity:1}}
+.sc-mov2 .m2-film{animation:m2jit .24s steps(2) infinite}@keyframes m2jit{0%{transform:translateY(0)}50%{transform:translateY(.5px)}}
+.sc-mov2 .m2-walk{animation:m2walk 9s linear infinite}@keyframes m2walk{from{transform:translate(94px,73px)}to{transform:translate(216px,73px)}}
+.sc-mov2 .m2-bob{animation:m2bob .32s ease-in-out infinite alternate}@keyframes m2bob{to{transform:translateY(-.8px)}}
+.sc-mov2 .m2-l1,.sc-mov2 .m2-l2,.sc-mov2 .m2-cane{transform-box:fill-box;transform-origin:50% 0%}
+.sc-mov2 .m2-l1{animation:m2leg .32s ease-in-out infinite alternate}.sc-mov2 .m2-l2{animation:m2leg .32s ease-in-out infinite alternate-reverse}
+@keyframes m2leg{from{transform:rotate(-16deg)}to{transform:rotate(16deg)}}
+.sc-mov2 .m2-cane{animation:m2leg .64s ease-in-out infinite alternate}
+.sc-mov2 .m2-grain{animation:m2gr .36s steps(1) infinite}@keyframes m2gr{0%{transform:translate(0,0)}25%{transform:translate(17px,9px)}50%{transform:translate(-9px,21px)}75%{transform:translate(31px,-7px)}}
+.sc-mov2 .m2-scr1{animation:m2s1 1.6s steps(1) infinite}@keyframes m2s1{0%{transform:translateX(0);opacity:.55}20%{transform:translateX(34px);opacity:0}40%{transform:translateX(-14px);opacity:.5}60%{transform:translateX(52px);opacity:.3}80%{transform:translateX(18px);opacity:0}}
+.sc-mov2 .m2-scr2{animation:m2s1 2.1s steps(1) infinite reverse}
+.sc-mov2 .m2-flk{opacity:0;animation:m2fl .9s steps(1) infinite}@keyframes m2fl{0%{opacity:0}20%{opacity:.09}35%{opacity:0}70%{opacity:.06}80%{opacity:0}}
+.sc-mov2 .m2-eat{transform-box:fill-box;transform-origin:0% 0%;animation:m2eat 3.4s ease-in-out infinite}
+@keyframes m2eat{0%,18%{transform:rotate(0)}24%{transform:rotate(12deg)}30%{transform:rotate(8deg)}42%,54%{transform:rotate(-66deg)}66%,100%{transform:rotate(0)}}
+.sc-mov2 .m2-man .pmo{transform-box:fill-box;transform-origin:center;animation:m2chew 3.4s infinite}
+@keyframes m2chew{0%,52%{transform:scaleY(1)}56%{transform:scaleY(-1.4)}60%{transform:scaleY(1)}64%{transform:scaleY(-1.4)}68%,100%{transform:scaleY(1)}}
+.sc-mov2 .m2-k{opacity:0;animation:m2k 2.2s ease-out infinite}.sc-mov2 .k2{animation-delay:-1.1s}
+@keyframes m2k{0%,55%{transform:translate(0,0);opacity:0}62%{opacity:1}100%{transform:translate(4px,-11px);opacity:0}}
+.sc-mov2 .k2{animation-name:m2k2}@keyframes m2k2{0%,55%{transform:translate(0,0);opacity:0}62%{opacity:1}100%{transform:translate(-3px,-12px);opacity:0}}
+.sc-mov2 .m2-wom{transform-box:fill-box;transform-origin:40% 100%;animation:m2laugh 4.6s ease-in-out infinite}
+@keyframes m2laugh{0%,55%{transform:rotate(0)}59%{transform:rotate(-5deg)}63%{transform:rotate(1.5deg)}67%{transform:rotate(-4deg)}71%{transform:rotate(1deg)}76%,100%{transform:rotate(0)}}
+.sc-mov2 .m2-wom .pmo{transform-box:fill-box;transform-origin:center;animation:m2lm 4.6s infinite}@keyframes m2lm{0%,55%{transform:scale(1)}59%,72%{transform:scale(1.3,2.4)}76%,100%{transform:scale(1)}}
+
+/* ---- Series v2: night car chase on TV, family on the sofa ---- */
+.sc-ser2 .s2-carA{animation:s2a 6s linear infinite}@keyframes s2a{from{transform:translate(42px,0)}to{transform:translate(222px,0)}}
+.sc-ser2 .s2-carB{animation:s2b 6s linear infinite}@keyframes s2b{from{transform:translate(252px,0)}to{transform:translate(52px,0)}}
+.sc-ser2 .s2-hb{opacity:.55;animation:s2hb 6s infinite}@keyframes s2hb{0%,36%{opacity:.55}38%{opacity:1}40%{opacity:.45}42%{opacity:1}44%{opacity:.45}46%{opacity:1}52%,100%{opacity:.55}}
+.sc-ser2 .s2-ha{opacity:.85;animation:s2ha 1.8s ease-in-out infinite}@keyframes s2ha{50%{opacity:.6}}
+.sc-ser2 .s2-flash{opacity:0;animation:s2fl 6s infinite}@keyframes s2fl{0%,37%{opacity:0}38%{opacity:.14}40%{opacity:0}42%{opacity:.14}44%{opacity:0}46%{opacity:.16}49%,100%{opacity:0}}
+.sc-ser2 .s2-glow{opacity:.5;animation:s2gl 6s infinite}@keyframes s2gl{0%,36%{opacity:.5}38%,47%{opacity:1}52%,100%{opacity:.5}}
+.sc-ser2 .s2-st{animation:wxtw 2.6s ease-in-out infinite}.sc-ser2 .s2-st:nth-child(2n){animation-delay:-1.2s}.sc-ser2 .s2-st:nth-child(3n){animation-delay:-2s}
+.sc-ser2 .s2-kid{animation:s2kid 6s ease-in-out infinite}@keyframes s2kid{0%,38%{transform:translateY(0)}42%{transform:translateY(-5px)}46%{transform:translateY(0)}50%{transform:translateY(-5px)}54%,100%{transform:translateY(0)}}
+.sc-ser2 .s2-gasp{transform-box:fill-box;transform-origin:0% 0%;animation:s2gasp 6s ease-in-out infinite}
+@keyframes s2gasp{0%,34%{transform:rotate(0)}41%,58%{transform:rotate(-62deg)}66%,100%{transform:rotate(0)}}
+.sc-ser2 .s2-mom .pmo{transform-box:fill-box;transform-origin:center;animation:s2mo 6s infinite}@keyframes s2mo{0%,36%{transform:scale(1)}40%,58%{transform:scale(1.2,-2.4)}64%,100%{transform:scale(1)}}
+.sc-ser2 .s2-dad{transform-box:fill-box;transform-origin:30% 100%;animation:s2dad 6s ease-in-out infinite}
+@keyframes s2dad{0%,30%{transform:rotate(0)}38%,58%{transform:rotate(7deg)}66%,100%{transform:rotate(0)}}
+.h3cw2{justify-content:flex-end}
+@media (max-width:899px){ .h3cw2{justify-content:center;background:none;border:0;padding:4px 0 10px} .cwo{width:min(300px,86%);height:66px} }
