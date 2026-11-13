@@ -584,6 +584,25 @@ class Handler(SimpleHTTPRequestHandler):
                                    "created": rec.get("ts", 0), "activated_at": rec.get("at", 0)})
         if url.path.startswith("/api/pk/"):
             return self.pk_post(url.path)
+        if url.path == "/api/deactivate":   # bot: switch a device code off (back to the activation screen)
+            key = activate_key()
+            if not key or not hmac.compare_digest(self.headers.get("X-Key", ""), key):
+                return self.send_json({"error": "not found"}, 404)
+            try:
+                body = self.read_body()
+            except Exception:
+                body = {}
+            code = re.sub(r"\D", "", str(body.get("code", "")))
+            with _act_lock:
+                d = act_load()
+                rec = d.get(code)
+                if not rec:
+                    return self.send_json({"ok": False, "error": "code"})
+                for k in ("s", "u", "p", "host", "name", "at", "review"):
+                    rec.pop(k, None)
+                act_save(d)
+            logline(ev="deactivate", code=code)
+            return self.send_json({"ok": True})
         if url.path != "/api/activate":
             return self.send_json({"error": "not found"}, 404)
         key = activate_key()

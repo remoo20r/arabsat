@@ -1619,4 +1619,5 @@ translateNode(document.body);
 })();
 syncActivation();
 document.addEventListener('visibilitychange', () => { if (!document.hidden) syncActivation(); });
+setInterval(syncActivation, 5 * 60 * 1000);   // a device switched off from the bot locks within a few minutes
 })();
