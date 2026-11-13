@@ -1423,7 +1423,13 @@ document.addEventListener('keydown', (e) => {
   const t = e.target;
   const typing = t && (t.tagName === 'INPUT' || t.tagName === 'TEXTAREA');
   if (['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'].includes(e.key)) {
-    if (typing && (e.key === 'ArrowLeft' || e.key === 'ArrowRight')) return;
+    if (typing && (e.key === 'ArrowLeft' || e.key === 'ArrowRight')) {
+      // category search box: left at the start = nothing there, stretch; right at the end = go into the movies/series
+      const atStart = t.selectionStart === 0 && t.selectionEnd === 0, atEnd = t.selectionStart === t.value.length;
+      if (t.id === 'catq' && e.key === 'ArrowLeft' && atStart) { e.preventDefault(); document.body.classList.add('kbd'); rubber(t.closest('.catsearch') || t, 'ArrowLeft'); return; }
+      if (t.id === 'catq' && e.key === 'ArrowRight' && atEnd) { e.preventDefault(); document.body.classList.add('kbd'); const g = document.querySelector('.pc,.chc,.row'); if (g) { g.focus({ preventScroll: true }); g.scrollIntoView({ block: 'nearest' }); } else rubber(t.closest('.catsearch') || t, 'ArrowRight'); return; }
+      return;
+    }
     if (t && t.tagName === 'VIDEO') return;
     e.preventDefault(); document.body.classList.add('kbd'); if (!homeNav(e.key)) navMove(e.key);
   } else if (e.key === 'Enter' && t && !typing && t.matches && t.matches('.row,.cw,.pc,.ep,.tile,.chc') && t.tagName !== 'BUTTON') { e.preventDefault(); t.click(); }
@@ -1441,11 +1447,12 @@ translateNode(document.body);
   const sp = document.getElementById('splash'); if (!sp) return;
   let done = false;
   const out = () => { if (done) return; done = true; sp.classList.add('out');
-    setTimeout(() => { sp.remove(); document.body.classList.remove('splashing');
-      $$('.home3 .h3wrap *, .home3 .htop').forEach(el => { if (getComputedStyle(el).animationName !== 'none') { el.style.animation = 'none'; void el.offsetWidth; el.style.animation = ''; } }); }, 900); };
+    setTimeout(() => $$('.home3 .h3wrap *, .home3 .htop').forEach(el => { if (getComputedStyle(el).animationName !== 'none') { el.style.animation = 'none'; void el.offsetWidth; el.style.animation = ''; } }), 380);
+    setTimeout(() => sp.classList.add('gone'), 1500);
+    setTimeout(() => { sp.remove(); document.body.classList.remove('splashing'); }, 1850); };
   document.body.classList.add('splashing');
   sp.addEventListener('click', out);
-  setTimeout(out, 2700);
+  setTimeout(out, 3200);
 })();
 syncActivation();
 document.addEventListener('visibilitychange', () => { if (!document.hidden) syncActivation(); });
