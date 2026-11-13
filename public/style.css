@@ -707,3 +707,109 @@ body.light .livebox.tv .row,body.light .livebox.tv .cat{color:#EDF1F6}
   .hb-r{min-width:0;overflow:hidden}
   .hb-r *{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 }
+
+/* =================== HOME v3: 6 cards centered + info stack =================== */
+.home3 .h3wrap{flex:1;min-height:0;display:flex;flex-direction:column;align-items:center;justify-content:center;
+  padding:8px calc(28px + var(--sr)) 78px calc(28px + var(--sl))}
+.home3 .h3grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:20px;width:min(1240px,100%)}
+.home3 .tile.hcard{max-width:none;width:auto;flex:none;height:clamp(160px,23vh,215px);min-height:0;max-height:none}
+.h3c{position:relative;overflow:hidden;border-radius:22px;height:clamp(100px,14vh,128px);padding:18px 22px;
+  background:linear-gradient(145deg,rgba(255,255,255,.085),rgba(255,255,255,.025));border:1px solid rgba(255,255,255,.1);
+  box-shadow:0 14px 34px rgba(0,0,0,.4),inset 0 1px 0 rgba(255,255,255,.08);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);
+  color:#fff;animation:h3in .6s cubic-bezier(.2,.8,.2,1) both}
+.h3c::before{content:"";position:absolute;inset:0;pointer-events:none;opacity:.9}
+@keyframes h3in{from{opacity:0;transform:translateY(16px)}to{opacity:1;transform:none}}
+.h3wx{animation-delay:.2s}.h3clock{animation-delay:.26s}.h3new{animation-delay:.32s}
+
+/* weather */
+.h3wx{display:flex;align-items:center;gap:16px}
+.h3wx::before{background:radial-gradient(120% 140% at 0% 0%,rgba(140,170,210,.22),transparent 60%)}
+.h3wx[data-k=sun]::before{background:radial-gradient(120% 140% at 0% 0%,rgba(255,190,60,.28),transparent 60%)}
+.h3wx[data-k=part]::before{background:radial-gradient(120% 140% at 0% 0%,rgba(255,200,90,.18),transparent 60%)}
+.h3wx[data-k=rain]::before,.h3wx[data-k=storm]::before{background:radial-gradient(120% 140% at 0% 0%,rgba(70,140,255,.28),transparent 60%)}
+.h3wx .wxi{width:clamp(52px,7vh,70px);height:clamp(52px,7vh,70px);flex:none;position:relative;filter:drop-shadow(0 6px 12px rgba(0,0,0,.45))}
+.h3wx .wxi svg{width:100%;height:100%}
+.h3wx .wxt{display:flex;flex-direction:column;min-width:0;position:relative}
+.h3wx .wxt b{font-size:clamp(26px,3.6vh,34px);font-weight:800;line-height:1.05}
+.h3wx .wxs{color:var(--goldL);font-weight:700;font-size:14px;margin-top:2px}
+.h3wx .wxl{display:flex;align-items:center;gap:4px;color:var(--muted);font-size:12.5px;margin-top:3px;min-width:0}
+.h3wx .wxl svg{width:12px;height:12px;flex:none;color:var(--red)}
+.h3wx .wxl em{font-style:normal;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+
+/* clock */
+.h3clock{display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center}
+.h3clock::before{background:radial-gradient(90% 120% at 50% 0%,rgba(211,36,54,.22),transparent 65%)}
+.h3clock::after{content:"";position:absolute;top:0;left:50%;width:70px;margin-left:-35px;height:3px;border-radius:0 0 3px 3px;background:linear-gradient(90deg,var(--red),var(--gold))}
+.h3clock .t{position:relative;font-size:clamp(30px,4.6vh,42px);font-weight:800;letter-spacing:.5px;line-height:1}
+.h3clock .dw{position:relative;margin-top:6px;color:var(--goldL);font-weight:800;font-size:12.5px;letter-spacing:2.5px;text-transform:uppercase}
+.h3clock .d{position:relative;margin-top:2px;color:var(--silverL);font-size:13px;font-weight:600}
+
+/* new releases */
+.h3new{display:flex;align-items:center;gap:16px;text-align:left;cursor:pointer;font:inherit;
+  border-color:rgba(212,175,55,.35);transition:transform .3s cubic-bezier(.2,.8,.2,1),box-shadow .3s,border-color .3s}
+.h3new::before{background:radial-gradient(120% 140% at 100% 0%,rgba(212,175,55,.24),transparent 60%)}
+.h3new::after{content:"";position:absolute;top:0;bottom:0;width:40%;left:-60%;background:linear-gradient(100deg,transparent,rgba(255,255,255,.14),transparent);animation:h3sweep 4.5s ease-in-out infinite}
+@keyframes h3sweep{0%,60%{left:-60%}100%{left:130%}}
+.h3new .hn-badge{position:relative;flex:none;font-size:15px;letter-spacing:3px;padding:8px 14px;border-radius:10px;animation:newglow 2.6s ease-in-out infinite}
+.h3new .hn-txt{position:relative;display:flex;flex-direction:column;min-width:0;flex:1}
+.h3new .hn-txt b{font-size:clamp(17px,2.4vh,21px);font-weight:800;color:#fff}
+.h3new .hn-txt span{color:var(--muted);font-size:13px;margin-top:2px}
+.h3new .hn-arr{position:relative;font-size:30px;color:var(--goldL);line-height:1;transition:transform .3s}
+.h3new:hover,.h3new:focus-visible{transform:translateY(-5px);border-color:var(--goldL);box-shadow:0 18px 40px rgba(0,0,0,.5),0 0 0 2px rgba(243,217,139,.35);outline:none}
+.h3new:hover .hn-arr,.h3new:focus-visible .hn-arr{transform:translateX(5px)}
+
+/* info stack under the clock */
+.h3info{grid-column:2;display:flex;flex-direction:column;gap:10px;animation:h3in .6s .4s cubic-bezier(.2,.8,.2,1) both}
+.h3row{display:flex;align-items:center;gap:12px;min-height:54px;padding:9px 12px 9px 10px;border-radius:16px;
+  background:linear-gradient(145deg,rgba(255,255,255,.07),rgba(255,255,255,.02));border:1px solid rgba(255,255,255,.09);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px)}
+.h3ico{width:34px;height:34px;flex:none;border-radius:11px;display:grid;place-items:center}
+.h3ico svg{width:18px;height:18px}
+.h3exp .h3ico{background:rgba(212,175,55,.16);color:var(--goldL)}
+.h3sup .h3ico{background:rgba(211,36,54,.18);color:#FF6B7A}
+.h3lab{flex:1;min-width:0;color:var(--muted);font-size:12.5px;font-weight:700;letter-spacing:.3px;line-height:1.35}
+.h3exp>b{color:#fff;font-size:14.5px;font-weight:800;white-space:nowrap}
+.h3sup .hc-num{color:var(--goldL);font-size:14.5px;font-weight:800;letter-spacing:.3px}
+.h3sup .hcontact{margin:0;gap:9px}
+.h3sup .hc-btn{width:36px;height:36px}
+.h3sup .hc-btn svg{width:17px;height:17px}
+
+.h3cw{width:min(1240px,100%);margin-top:16px}
+.h3cw .section-t{padding-left:0}
+
+/* ---------- phone: same idea, portrait ---------- */
+@media (max-width:899px){
+  .home3 .h3wrap{padding:4px calc(14px + var(--sr)) calc(10px + var(--sb)) calc(14px + var(--sl));justify-content:stretch;align-items:stretch}
+  .home3 .h3grid{flex:1;min-height:0;grid-template-columns:1fr 1fr;gap:10px;width:100%;
+    grid-template-rows:repeat(3,minmax(58px,1fr)) auto auto auto;
+    grid-template-areas:"live live" "movies movies" "series series" "wx clock" "new new" "info info"}
+  .home3 .hc-live{grid-area:live}.home3 .hc-movies{grid-area:movies}.home3 .hc-series{grid-area:series}
+  .h3wx{grid-area:wx}.h3clock{grid-area:clock}.h3new{grid-area:new}.h3info{grid-area:info}
+  .home3 .tile.hcard{height:auto;min-height:0;max-height:none}
+  .h3c{height:auto;padding:12px 14px;border-radius:18px}
+  .h3wx,.h3clock{min-height:clamp(80px,11vh,100px)}
+  .h3wx{gap:10px}
+  .h3wx .wxi{width:40px;height:40px}
+  .h3wx .wxt b{font-size:22px}.h3wx .wxs{font-size:12px}.h3wx .wxl{font-size:11px}
+  .h3clock .t{font-size:26px}.h3clock .dw{font-size:10.5px;letter-spacing:2px;margin-top:4px}.h3clock .d{font-size:11.5px}
+  .h3new{padding:10px 14px;gap:12px}
+  .h3new .hn-badge{font-size:13px;padding:6px 11px}
+  .h3new .hn-txt b{font-size:16px}.h3new .hn-txt span{font-size:12px}
+  .h3info{gap:8px}
+  .h3row{min-height:46px;padding:6px 10px 6px 8px;border-radius:14px}
+  .h3ico{width:30px;height:30px;border-radius:9px}.h3ico svg{width:16px;height:16px}
+  .h3lab{font-size:11.5px}.h3exp>b,.h3sup .hc-num{font-size:13.5px}
+  .h3sup .hc-btn{width:32px;height:32px}.h3sup .hc-btn svg{width:15px;height:15px}
+  .h3cw{display:none}
+}
+
+/* light theme */
+body.light .h3c,body.light .h3row{background:linear-gradient(145deg,rgba(255,255,255,.95),rgba(255,255,255,.75));border-color:rgba(80,30,35,.12);box-shadow:0 12px 30px rgba(80,30,35,.12);color:#2a1a1c}
+body.light .h3wx .wxt b,body.light .h3clock .t,body.light .h3new .hn-txt b,body.light .h3exp>b{color:#2a1a1c}
+body.light .h3clock .d{color:#6b5558}
+
+.h3clock .t{white-space:nowrap}
+.h3new{cursor:pointer;font:inherit;width:auto}
+.home3 .hcard .hc-i{max-height:calc(100% - 20px);max-width:calc(100% - 20px)}
+@media (max-width:899px){.home3 .hcard .hc-i{width:auto;height:min(64px,calc(100% - 18px));aspect-ratio:1;top:50%;bottom:auto;transform:translateY(-50%);margin-top:0}}
+.h3new .hn-badge{background:linear-gradient(135deg,#F3D98B,#D4AF37 55%,#A8831F);color:#1a0e05;font-weight:900;box-shadow:0 6px 18px rgba(212,175,55,.45)}
+@media (max-width:899px){.home3 .h3info{grid-column:1 / -1}}

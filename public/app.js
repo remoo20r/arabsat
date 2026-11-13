@@ -109,7 +109,7 @@ function applyPrefs() {
 const AR = {
   'Live TV': 'البث المباشر', 'Movies': 'الأفلام', 'Series': 'المسلسلات', 'New Releases': 'الجديد', 'Latest movies & series': 'أحدث الأفلام والمسلسلات',
   'Continue Watching': 'كمّل المشاهدة', 'Categories': 'الأقسام', 'Search in categories': 'دوّر في الأقسام', 'Search': 'بحث', 'NEW': 'جديد',
-  'Active until': 'الاشتراك لحد', 'Unlimited': 'غير محدود', 'My Account': 'حسابي', 'Activation code': 'كود التفعيل', 'Username': 'اليوزرنيم',
+  'Active until': 'الاشتراك لحد', 'Expiration Date': 'تاريخ انتهاء الاشتراك', 'Customer Service': 'خدمة العملاء', 'Clear sky': 'السما صافية', 'Partly cloudy': 'غيوم خفيفة', 'Cloudy': 'غايم', 'Foggy': 'شبورة', 'Rainy': 'مطر', 'Snowy': 'تلج', 'Thunderstorm': 'عاصفة رعدية', 'Weather': 'الطقس', 'Locating…': 'بنحدد مكانك…', 'Unlimited': 'غير محدود', 'My Account': 'حسابي', 'Activation code': 'كود التفعيل', 'Username': 'اليوزرنيم',
   'Server': 'السيرفر', 'Status': 'الحالة', 'Expires': 'ينتهي', 'Connections': 'الأجهزة', 'Settings': 'الإعدادات', 'Appearance': 'الشكل',
   'Language': 'اللغة', '🌙 Dark': '🌙 داكن', '☀️ Light': '☀️ فاتح', 'Clear watch history': 'امسح سجل المشاهدة', 'Call': 'اتصال', 'WhatsApp': 'واتساب',
   'Active': 'شغال', 'Expired': 'منتهي', 'Banned': 'موقوف', 'Disabled': 'متوقف', 'LIVE': 'مباشر', 'Program guide': 'جدول البرامج',
@@ -330,6 +330,10 @@ const WX = {
 function wxIcon(code) { code = +code;
   if (code === 0) return WX.sun; if (code <= 2) return WX.part; if (code === 3) return WX.cloud; if (code <= 48) return WX.fog;
   if (code <= 67 || (code >= 80 && code <= 82)) return WX.rain; if (code <= 77 || code === 85 || code === 86) return WX.snow; return WX.storm; }
+function wxKind(code) { code = +code; if (code === 0) return 'sun'; if (code <= 2) return 'part'; if (code === 3) return 'cloud'; if (code <= 48) return 'fog';
+  if (code <= 67 || (code >= 80 && code <= 82)) return 'rain'; if (code <= 77 || code === 85 || code === 86) return 'snow'; return 'storm'; }
+function wxName(code) { return { sun: 'Clear sky', part: 'Partly cloudy', cloud: 'Cloudy', fog: 'Foggy', rain: 'Rainy', snow: 'Snowy', storm: 'Thunderstorm' }[wxKind(code)]; }
+const CAL = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="3" y="5" width="18" height="16" rx="3"/><path d="M3 10h18M8 3v4M16 3v4"/><path d="M8 14h3v3H8z" fill="currentColor"/></svg>';
 async function loadWeather() {
   const box = $('#hwx'); if (!box) return;
   let g = store.get('geo', null);
@@ -343,7 +347,8 @@ async function loadWeather() {
       w = { t: Math.round(j.current.temperature_2m), c: j.current.weather_code, u: f ? 'F' : 'C', at: Date.now() }; store.set('wx', w);
     }
     if (!$('#hwx')) return;
-    box.innerHTML = `<div class="wxi">${wxIcon(w.c)}</div><div><b>${w.t}°${w.u}</b><span>${I.pin ? '' : ''}${esc(g.city || g.region || '')}${g.country ? ', ' + esc(g.country) : ''}</span></div>`;
+    box.dataset.k = wxKind(w.c);
+    box.innerHTML = `<div class="wxi">${wxIcon(w.c)}</div><div class="wxt"><b>${w.t}°${w.u}</b><span class="wxs">${wxName(w.c)}</span><span class="wxl">${HI.pin}<em>${esc(g.city || g.region || '')}${g.country ? ', ' + esc(g.country) : ''}</em></span></div>`;
   } catch (e) {}
 }
 function renderHome() {
@@ -352,29 +357,31 @@ function renderHome() {
   const cw = continueList();
   const card = (key, title, sub, go, icon) => `<button class="tile hcard hc-${key}" data-go="${go}">
       <span class="hc-tab"></span><span class="hc-t">${title}</span><span class="hc-i">${icon}</span></button>`;
-  app.innerHTML = `<div class="home home2"><div class="hbg" id="hbg"></div>
+  app.innerHTML = `<div class="home home2 home3"><div class="hbg" id="hbg"></div>
     <div class="htop"><div class="hlogo"><img src="icon-192.png" alt=""><div><div class="w">ARAB <b>SAT</b></div><div class="ar">عرب سات</div></div></div>
       <div class="hact"><button class="ibtn" data-go="#/search">${I.search}</button><button class="ibtn" id="rf">${I.refresh}</button><button class="ibtn" id="st">${I.gear}</button></div></div>
-    <div class="hcards">
+    <div class="h3wrap"><div class="h3grid">
       ${card('live', 'Live TV', 'Channels', '#/live', HI.live)}
       ${card('movies', 'Movies', 'Movies', '#/movies', HI.movies)}
       ${card('series', 'Series', 'Series', '#/series', HI.series)}
+      <div class="h3c h3wx" id="hwx"><div class="wxi">${WX.part}</div><div class="wxt"><b>--°</b><span class="wxs">Weather</span><span class="wxl">${HI.pin}<em>Locating…</em></span></div></div>
+      <div class="h3c h3clock"><div class="t" id="ck"></div><div class="dw" id="cw"></div><div class="d" id="cd"></div></div>
+      <button class="h3c h3new" data-go="#/new"><span class="hn-badge">NEW</span><span class="hn-txt"><b>New Releases</b><span>Latest movies &amp; series</span></span><span class="hn-arr">${I.chev || '&#8250;'}</span></button>
+      <div class="h3info">
+        <div class="h3row h3exp"><span class="h3ico">${CAL}</span><span class="h3lab">Expiration Date</span><b>${exp ? exp.toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' }) : (ui.username ? 'Unlimited' : '-')}</b></div>
+        <div class="h3row h3sup"><span class="h3ico">${I.phone}</span><span class="h3lab">Customer Service<br><b class="hc-num">${SUPPORT.show}</b></span>
+          <span class="hcontact"><a class="hc-btn hc-call" href="tel:${SUPPORT.tel}" aria-label="Call">${I.phone}</a>
+          <a class="hc-btn hc-wa" href="https://wa.me/${SUPPORT.wa}" target="_blank" rel="noopener" aria-label="WhatsApp">${I.wa}</a></span></div>
+      </div>
     </div>
-    <div class="hnew"><button class="tile hcard hc-new" data-go="#/new"><span class="hc-tab"></span>
-      <span class="hn-badge">NEW</span></button></div>
-    ${cw.length ? `<div class="section-t">Continue Watching</div><div class="hrow">${cw.map(c => `
+    ${cw.length ? `<div class="h3cw"><div class="section-t">Continue Watching</div><div class="hrow">${cw.map(c => `
       <button class="cw" data-cw="${esc(c.id)}"><div class="im" style="background-image:url('${esc(img(c.img))}')"><div class="prog" style="width:${Math.min(100, c.t / c.d * 100)}%"></div></div>
-      <div class="n" dir="auto">${esc(c.title)}</div></button>`).join('')}</div>` : ''}
-    <div class="hbot">
-      <div class="hb-l"><div class="hexp">${exp ? `Active until <b>${exp.toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' })}</b>` : (ui.username ? '<b>Unlimited</b>' : '')}<div class="hcontact"><span class="hc-num">${SUPPORT.show}</span>
-        <a class="hc-btn hc-call" href="tel:${SUPPORT.tel}" aria-label="Call">${I.phone}</a>
-        <a class="hc-btn hc-wa" href="https://wa.me/${SUPPORT.wa}" target="_blank" rel="noopener" aria-label="WhatsApp">${I.wa}</a></div></div></div>
-      <div class="hb-c"><div class="t" id="ck"></div><div class="d" id="cd"></div></div>
-      <div class="hb-r" id="hwx"></div>
+      <div class="n" dir="auto">${esc(c.title)}</div></button>`).join('')}</div></div>` : ''}
     </div></div>`;
   const tick = () => { const n = new Date(); const t = $('#ck'); if (!t) return;
     t.textContent = n.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' });
-    $('#cd').textContent = n.toLocaleDateString(undefined, { weekday: 'long', month: 'long', day: 'numeric' }); };
+    $('#cw').textContent = n.toLocaleDateString(undefined, { weekday: 'long' });
+    $('#cd').textContent = n.toLocaleDateString(undefined, { month: 'long', day: 'numeric', year: 'numeric' }); };
   tick(); const iv = setInterval(tick, 10000); onLeave(() => clearInterval(iv));
   $('#st').onclick = openSettings;
   $('#rf').onclick = () => { S.mem = {}; toast('Lists refreshed'); refreshAccount(); renderHome(); };
