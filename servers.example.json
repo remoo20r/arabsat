@@ -1,0 +1,5 @@
+[
+  {"name": "Bella TV", "host": "http://example.com:2095"},
+  {"name": "Royal TV", "host": "http://example.net:80"},
+  {"name": "Tron TV",  "host": "http://example.org"}
+]
